@@ -1,7 +1,7 @@
 {
-  "name": "Macros",
-  "short_name": "Macros",
-  "description": "Track daily calories and macros. Lives entirely on your phone.",
+  "name": "Get Shredded",
+  "short_name": "Shredded",
+  "description": "Deficit-based fitness & macros tracker with AI quick-logging. Lives entirely on your phone.",
   "start_url": "index.html",
   "scope": "./",
   "display": "standalone",

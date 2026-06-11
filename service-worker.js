@@ -1,5 +1,5 @@
 // Simple offline cache so the app works with no signal and feels native.
-var CACHE = "macros-v1";
+var CACHE = "shredded-v2";
 var ASSETS = [
   "index.html",
   "manifest.json",
