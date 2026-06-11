@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<title>Macros</title>
+<meta name="theme-color" content="#0b0f17" />
+<link rel="manifest" href="manifest.json" />
+<!-- iOS "Add to Home Screen" support -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Macros" />
+<link rel="apple-touch-icon" href="icons/icon-180.png" />
+<link rel="icon" href="icons/icon-180.png" />
+<style>
+  :root{
+    --bg:#0b0f17; --card:#151b27; --card2:#1c2434; --line:#26304a;
+    --txt:#eef2f8; --muted:#8a96ab; --accent:#3ddc97; --accent2:#5b9dff;
+    --p:#ff8a5b; --c:#5b9dff; --f:#ffd166; --cal:#3ddc97;
+    --danger:#ff6b6b;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  body{padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 90px)}
+  .wrap{max-width:560px;margin:0 auto;padding:0 16px}
+  header{padding:18px 16px 8px;max-width:560px;margin:0 auto;display:flex;
+    align-items:center;justify-content:space-between}
+  header h1{font-size:20px;margin:0;letter-spacing:.3px}
+  header .date{color:var(--muted);font-size:13px;margin-top:2px}
+  .iconbtn{background:var(--card);border:1px solid var(--line);color:var(--txt);
+    width:40px;height:40px;border-radius:12px;font-size:18px;display:flex;
+    align-items:center;justify-content:center}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:16px;margin:12px 0}
+
+  /* Calorie ring */
+  .ringwrap{display:flex;align-items:center;gap:18px}
+  .ring{position:relative;width:128px;height:128px;flex:0 0 auto}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .center{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center}
+  .ring .big{font-size:26px;font-weight:700;line-height:1}
+  .ring .sub{font-size:11px;color:var(--muted);margin-top:3px}
+  .macgrid{flex:1;display:flex;flex-direction:column;gap:12px}
+  .mac{}
+  .mac .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+  .mac .top .name{font-weight:600}
+  .mac .top .val{color:var(--muted)}
+  .bar{height:8px;background:var(--card2);border-radius:99px;overflow:hidden}
+  .bar > div{height:100%;border-radius:99px;width:0;transition:width .4s ease}
+
+  h2.section{font-size:14px;color:var(--muted);margin:18px 4px 8px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.6px}
+
+  .entry{display:flex;align-items:center;gap:12px;padding:12px 14px;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;margin:8px 0}
+  .entry .info{flex:1;min-width:0}
+  .entry .info .nm{font-weight:600;font-size:15px;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .entry .info .mc{font-size:12px;color:var(--muted);margin-top:2px}
+  .entry .kcal{font-weight:700;font-size:15px}
+  .entry .del{color:var(--muted);font-size:18px;padding:4px 6px}
+  .empty{color:var(--muted);text-align:center;padding:26px 10px;font-size:14px}
+
+  /* Bottom add button */
+  .fab{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 18px);
+    display:flex;justify-content:center;pointer-events:none;z-index:30}
+  .fab button{pointer-events:auto;background:var(--accent);color:#06231a;border:none;
+    font-weight:700;font-size:16px;padding:15px 30px;border-radius:99px;
+    box-shadow:0 10px 30px rgba(61,220,151,.35);display:flex;align-items:center;gap:8px}
+
+  /* Modal / sheet */
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;display:none;
+    align-items:flex-end;backdrop-filter:blur(2px)}
+  .sheet.open{display:flex}
+  .sheet .panel{background:var(--bg);width:100%;max-width:560px;margin:0 auto;
+    border-radius:22px 22px 0 0;border-top:1px solid var(--line);
+    padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);max-height:92vh;overflow:auto;
+    animation:up .25s ease}
+  @keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+  .panel h3{margin:4px 0 14px;font-size:18px}
+  label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+  input{width:100%;background:var(--card);border:1px solid var(--line);color:var(--txt);
+    font-size:17px;padding:13px 14px;border-radius:13px;outline:none}
+  input:focus{border-color:var(--accent2)}
+  .row{display:flex;gap:10px}
+  .row > div{flex:1}
+  .btnrow{display:flex;gap:10px;margin-top:18px}
+  .btn{flex:1;text-align:center;padding:14px;border-radius:13px;font-weight:700;
+    font-size:16px;border:1px solid var(--line);background:var(--card);color:var(--txt)}
+  .btn.primary{background:var(--accent);color:#06231a;border:none}
+  .btn.ghost{background:transparent}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .quick button{background:var(--card2);border:1px solid var(--line);color:var(--txt);
+    padding:8px 12px;border-radius:99px;font-size:13px}
+
+  .navdate{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+  .navdate button{background:var(--card);border:1px solid var(--line);color:var(--txt);
+    width:36px;height:36px;border-radius:10px;font-size:16px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Macros</h1>
+    <div class="date" id="todayLabel"></div>
+  </div>
+  <button class="iconbtn" id="goalsBtn" aria-label="Goals">⚙︎</button>
+</header>
+
+<div class="wrap">
+  <div class="navdate">
+    <button id="prevDay">‹</button>
+    <div id="dayName" style="font-weight:600"></div>
+    <button id="nextDay">›</button>
+  </div>
+
+  <div class="card">
+    <div class="ringwrap">
+      <div class="ring">
+        <svg width="128" height="128" viewBox="0 0 128 128">
+          <circle cx="64" cy="64" r="56" stroke="#1c2434" stroke-width="14" fill="none"/>
+          <circle id="ringFg" cx="64" cy="64" r="56" stroke="var(--cal)" stroke-width="14"
+            fill="none" stroke-linecap="round" stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
+        </svg>
+        <div class="center">
+          <div class="big" id="calLeft">0</div>
+          <div class="sub" id="calSub">left</div>
+        </div>
+      </div>
+      <div class="macgrid">
+        <div class="mac">
+          <div class="top"><span class="name" style="color:var(--p)">Protein</span><span class="val" id="pVal">0 / 0g</span></div>
+          <div class="bar"><div id="pBar" style="background:var(--p)"></div></div>
+        </div>
+        <div class="mac">
+          <div class="top"><span class="name" style="color:var(--c)">Carbs</span><span class="val" id="cVal">0 / 0g</span></div>
+          <div class="bar"><div id="cBar" style="background:var(--c)"></div></div>
+        </div>
+        <div class="mac">
+          <div class="top"><span class="name" style="color:var(--f)">Fat</span><span class="val" id="fVal">0 / 0g</span></div>
+          <div class="bar"><div id="fBar" style="background:var(--f)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section">Today's Food</h2>
+  <div id="entries"></div>
+</div>
+
+<div class="fab"><button id="addBtn">＋ Add Food</button></div>
+
+<!-- Add food sheet -->
+<div class="sheet" id="addSheet">
+  <div class="panel">
+    <h3>Add Food</h3>
+    <label>Name</label>
+    <input id="fName" placeholder="e.g. Chicken & rice" autocomplete="off" />
+    <div class="quick" id="recentQuick"></div>
+    <label>Calories</label>
+    <input id="fCal" type="number" inputmode="numeric" placeholder="0" />
+    <div class="row">
+      <div><label>Protein (g)</label><input id="fP" type="number" inputmode="decimal" placeholder="0" /></div>
+      <div><label>Carbs (g)</label><input id="fC" type="number" inputmode="decimal" placeholder="0" /></div>
+      <div><label>Fat (g)</label><input id="fF" type="number" inputmode="decimal" placeholder="0" /></div>
+    </div>
+    <div class="hint">Tip: leave calories blank and they'll be estimated from macros (4/4/9).</div>
+    <div class="btnrow">
+      <button class="btn ghost" id="addCancel">Cancel</button>
+      <button class="btn primary" id="addSave">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Goals sheet -->
+<div class="sheet" id="goalsSheet">
+  <div class="panel">
+    <h3>Daily Goals</h3>
+    <label>Calories</label>
+    <input id="gCal" type="number" inputmode="numeric" placeholder="2000" />
+    <div class="row">
+      <div><label>Protein (g)</label><input id="gP" type="number" inputmode="numeric" placeholder="150" /></div>
+      <div><label>Carbs (g)</label><input id="gC" type="number" inputmode="numeric" placeholder="200" /></div>
+      <div><label>Fat (g)</label><input id="gF" type="number" inputmode="numeric" placeholder="65" /></div>
+    </div>
+    <div class="hint">Everything is stored only on this phone. Nothing is sent anywhere.</div>
+    <div class="btnrow">
+      <button class="btn ghost" id="goalsCancel">Close</button>
+      <button class="btn primary" id="goalsSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var LS_GOALS="fm_goals", LS_DAYS="fm_days", LS_RECENT="fm_recent";
+  var DEFAULT_GOALS={cal:2000,p:150,c:200,f:65};
+
+  function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+  function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+  var goals=load(LS_GOALS,DEFAULT_GOALS);
+  var days=load(LS_DAYS,{});       // { "2026-06-11": [ {name,cal,p,c,f}, ... ] }
+  var recent=load(LS_RECENT,[]);   // last used foods for quick add
+  var viewDate=new Date();
+
+  function key(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+  function dayList(){return days[key(viewDate)]||[];}
+  function setDayList(list){days[key(viewDate)]=list;save(LS_DAYS,days);}
+
+  var $=function(id){return document.getElementById(id);};
+
+  function fmtDate(d){
+    var t=new Date(); t.setHours(0,0,0,0);
+    var dd=new Date(d); dd.setHours(0,0,0,0);
+    var diff=Math.round((dd-t)/86400000);
+    if(diff===0)return "Today";
+    if(diff===-1)return "Yesterday";
+    if(diff===1)return "Tomorrow";
+    return dd.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
+  }
+
+  function totals(){
+    var t={cal:0,p:0,c:0,f:0};
+    dayList().forEach(function(e){t.cal+=e.cal;t.p+=e.p;t.c+=e.c;t.f+=e.f;});
+    return t;
+  }
+
+  function setBar(barId,valId,used,goal,unit){
+    var pct=goal>0?Math.min(100,(used/goal)*100):0;
+    $(barId).style.width=pct+"%";
+    $(valId).textContent=Math.round(used)+" / "+Math.round(goal)+(unit||"");
+  }
+
+  function render(){
+    $("todayLabel").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+    $("dayName").textContent=fmtDate(viewDate);
+
+    var t=totals();
+    var left=Math.round(goals.cal - t.cal);
+    var ring=$("ringFg");
+    var C=351.86;
+    var pct=goals.cal>0?Math.min(1,t.cal/goals.cal):0;
+    ring.style.strokeDashoffset=(C*(1-pct)).toFixed(2);
+    ring.setAttribute("stroke", t.cal>goals.cal? "var(--danger)":"var(--cal)");
+    if(left>=0){$("calLeft").textContent=left;$("calSub").textContent="cal left";}
+    else{$("calLeft").textContent=Math.abs(left);$("calSub").textContent="cal over";}
+
+    setBar("pBar","pVal",t.p,goals.p,"g");
+    setBar("cBar","cVal",t.c,goals.c,"g");
+    setBar("fBar","fVal",t.f,goals.f,"g");
+
+    var box=$("entries"), list=dayList();
+    box.innerHTML="";
+    if(list.length===0){
+      box.innerHTML='<div class="empty">No food logged yet.<br>Tap “Add Food” to start.</div>';
+    } else {
+      list.forEach(function(e,i){
+        var row=document.createElement("div");
+        row.className="entry";
+        row.innerHTML=
+          '<div class="info"><div class="nm"></div>'+
+          '<div class="mc">P '+round1(e.p)+'g · C '+round1(e.c)+'g · F '+round1(e.f)+'g</div></div>'+
+          '<div class="kcal">'+Math.round(e.cal)+'</div>'+
+          '<div class="del">✕</div>';
+        row.querySelector(".nm").textContent=e.name||"Food";
+        row.querySelector(".del").addEventListener("click",function(){
+          list.splice(i,1);setDayList(list);render();
+        });
+        box.appendChild(row);
+      });
+    }
+  }
+  function round1(n){return Math.round(n*10)/10;}
+
+  // ---- Sheets ----
+  function openSheet(id){$(id).classList.add("open");}
+  function closeSheet(id){$(id).classList.remove("open");}
+
+  function renderRecent(){
+    var q=$("recentQuick");q.innerHTML="";
+    recent.slice(0,6).forEach(function(r){
+      var b=document.createElement("button");
+      b.textContent=r.name;
+      b.addEventListener("click",function(){
+        $("fName").value=r.name;$("fCal").value=r.cal;
+        $("fP").value=r.p;$("fC").value=r.c;$("fF").value=r.f;
+      });
+      q.appendChild(b);
+    });
+  }
+
+  $("addBtn").addEventListener("click",function(){
+    $("fName").value="";$("fCal").value="";$("fP").value="";$("fC").value="";$("fF").value="";
+    renderRecent();openSheet("addSheet");setTimeout(function(){$("fName").focus();},120);
+  });
+  $("addCancel").addEventListener("click",function(){closeSheet("addSheet");});
+
+  $("addSave").addEventListener("click",function(){
+    var name=$("fName").value.trim()||"Food";
+    var p=parseFloat($("fP").value)||0, c=parseFloat($("fC").value)||0, f=parseFloat($("fF").value)||0;
+    var cal=parseFloat($("fCal").value);
+    if(isNaN(cal)||cal<=0){cal=Math.round(p*4+c*4+f*9);}
+    var entry={name:name,cal:cal,p:p,c:c,f:f};
+    var list=dayList();list.push(entry);setDayList(list);
+
+    // update recents
+    recent=recent.filter(function(r){return r.name.toLowerCase()!==name.toLowerCase();});
+    recent.unshift(entry);recent=recent.slice(0,12);save(LS_RECENT,recent);
+
+    closeSheet("addSheet");render();
+  });
+
+  // Goals
+  $("goalsBtn").addEventListener("click",function(){
+    $("gCal").value=goals.cal;$("gP").value=goals.p;$("gC").value=goals.c;$("gF").value=goals.f;
+    openSheet("goalsSheet");
+  });
+  $("goalsCancel").addEventListener("click",function(){closeSheet("goalsSheet");});
+  $("goalsSave").addEventListener("click",function(){
+    goals={
+      cal:parseInt($("gCal").value)||DEFAULT_GOALS.cal,
+      p:parseInt($("gP").value)||0,
+      c:parseInt($("gC").value)||0,
+      f:parseInt($("gF").value)||0
+    };
+    save(LS_GOALS,goals);closeSheet("goalsSheet");render();
+  });
+
+  // Date nav
+  $("prevDay").addEventListener("click",function(){viewDate.setDate(viewDate.getDate()-1);render();});
+  $("nextDay").addEventListener("click",function(){viewDate.setDate(viewDate.getDate()+1);render();});
+
+  // tap backdrop to close
+  [["addSheet"],["goalsSheet"]].forEach(function(p){
+    $(p[0]).addEventListener("click",function(e){if(e.target===this)closeSheet(p[0]);});
+  });
+
+  render();
+
+  // Register service worker for offline use
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("service-worker.js").catch(function(){});
+  }
+})();
+</script>
+</body>
+</html>
