@@ -1,5 +1,5 @@
 // Simple offline cache so the app works with no signal and feels native.
-var CACHE = "shredded-v4";
+var CACHE = "shredded-v5";
 var ASSETS = [
   "index.html",
   "manifest.json",
