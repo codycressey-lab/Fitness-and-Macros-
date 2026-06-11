@@ -322,9 +322,10 @@
       <option value="claude-haiku-4-5">Haiku 4.5 — fastest &amp; cheapest</option>
     </select>
     <button class="btn primary" id="saveAi">Save AI settings</button>
-    <div class="hint">With a key set, the <b>✨ bar</b> on the Today screen lets you just type
-      “3 chicken fillets and a cup of rice” and it logs the calories &amp; protein for you, using your
-      own food values as a reference. Get a key at <b>console.anthropic.com → API Keys</b>. Your key is
+    <div class="hint">With a key set, the bar on the Today screen logs <b>food or workouts</b> from plain language —
+      “3 chicken fillets and a cup of rice”, or “played basketball for 2 hours” (it estimates your calorie
+      burn from your weight &amp; activity). You can also 📷 a photo of your plate. Get a key at
+      <b>console.anthropic.com → API Keys</b>. Your key is
       stored <b>only on this phone</b> and sent straight to Anthropic — never to this repo or anyone else.
       (API usage is billed by Anthropic separately from any Claude subscription.)</div>
   </div>
@@ -340,7 +341,7 @@
 <!-- ================= AI QUICK-LOG BAR ================= -->
 <div class="chatbar" id="chatbar"><div class="inner">
   <button id="camBtn" class="cam" aria-label="Photo of food">📷</button>
-  <input id="chatInput" placeholder="Say or 📷 what you ate…" autocomplete="off" />
+  <input id="chatInput" placeholder="Log food or a workout…" autocomplete="off" />
   <button id="chatSend" aria-label="Log it">➤</button>
 </div></div>
 <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" />
@@ -810,14 +811,23 @@ function toast(msg){
   clearTimeout(toastEl._t);toastEl._t=setTimeout(function(){toastEl.classList.remove("show");},3600);
 }
 function aiSystem(){
-  var lib=FOOD_LIB.map(function(f){return "- "+f[0]+": "+f[1]+" cal, "+f[2]+"g protein";}).join("\n");
-  return "You are a fast nutrition-logging assistant for Cody, who is eating at a calorie deficit to lose weight. "+
-    "He tells you in plain language what he ate or drank. Return ONE structured item per distinct food or drink, "+
-    "each with a realistic estimate of calories and protein in grams, scaled to the quantities he states "+
-    "(e.g. \"3 chicken fillets\" means 3x a chicken breast). Round calories to the nearest 5 and protein to the nearest gram. "+
-    "If he sends a photo of his food, identify each distinct food and drink you can see and estimate portion sizes from the image. "+
-    "When an item clearly matches one of his regular foods below, use those values (scaled by quantity):\n"+lib+
-    "\n\nIgnore anything that is not food or drink (such as workouts). If nothing edible is described, return an empty items array.";
+  var foodLib=FOOD_LIB.map(function(f){return "- "+f[0]+": "+f[1]+" cal, "+f[2]+"g protein";}).join("\n");
+  var burnLib=BURN_LIB.map(function(b){return "- "+b[0]+": ~"+b[1]+" cal";}).join("\n");
+  var wt=Math.round(estWeightNow()*10)/10;
+  return "You are a fast logging assistant for Cody, who is eating at a calorie deficit to lose weight. "+
+    "His stats: "+(settings.height||"6'3\"")+", "+(settings.age||38)+" years old, about "+wt+" lbs. "+
+    "He describes, in plain language, FOOD he ate, a WORKOUT / activity he did, or both in one message. "+
+    "Split it into two lists.\n\n"+
+    "FOODS — one entry per distinct food or drink, with realistic calories and protein (grams), scaled to the stated quantity "+
+    "(e.g. \"3 chicken fillets\" = 3x a chicken breast). Round calories to the nearest 5 and protein to the nearest gram. "+
+    "If a photo is provided, identify each food/drink in it and estimate portions.\n\n"+
+    "WORKOUTS — one entry per distinct activity, with the ACTIVE CALORIES BURNED. "+
+    "If he gives a burn number (e.g. \"burned 600\", \"watch said 540\"), use it exactly. Otherwise estimate the burn from his "+
+    "body weight ("+wt+" lbs) and the activity and duration he states (e.g. \"basketball for 2 hours\" = 2x the per-hour rate). "+
+    "Round to the nearest 5.\n\n"+
+    "Use these established values when an item clearly matches, scaling by quantity or duration:\n"+
+    "Foods:\n"+foodLib+"\nActivities:\n"+burnLib+"\n\n"+
+    "Never put an item in the wrong list. Leave a list empty if he didn't mention that type. Do not invent items he didn't mention.";
 }
 var aiBusy=false;
 function setAiBusy(b){
@@ -825,9 +835,11 @@ function setAiBusy(b){
   $("chatSend").textContent=b?"…":"➤";
 }
 function aiSchema(){
-  return {type:"object",additionalProperties:false,required:["items"],properties:{
-    items:{type:"array",items:{type:"object",additionalProperties:false,required:["name","calories","protein"],
-      properties:{name:{type:"string"},calories:{type:"integer"},protein:{type:"number"}}}}}};
+  return {type:"object",additionalProperties:false,required:["foods","workouts"],properties:{
+    foods:{type:"array",items:{type:"object",additionalProperties:false,required:["name","calories","protein"],
+      properties:{name:{type:"string"},calories:{type:"integer"},protein:{type:"number"}}}},
+    workouts:{type:"array",items:{type:"object",additionalProperties:false,required:["name","calories"],
+      properties:{name:{type:"string"},calories:{type:"integer"}}}}}};
 }
 // Core: send user content (string or content-block array) to Claude, log the items it returns.
 function runClaudeLog(userContent, onSuccess){
@@ -846,17 +858,20 @@ function runClaudeLog(userContent, onSuccess){
      if(!res.ok){throw new Error((res.j&&res.j.error&&res.j.error.message)||("HTTP "+res.status));}
      if(res.j.stop_reason==="refusal"){throw new Error("That couldn't be logged.");}
      var txt=""; (res.j.content||[]).forEach(function(b){if(b.type==="text")txt+=b.text;});
-     var items=(JSON.parse(txt).items)||[];
-     if(!items.length){toast("Didn't catch any food — try again or add a note.");return;}
-     var d=getDay(key(viewDate)), tc=0, tp=0;
-     items.forEach(function(it){
-       var cal=Math.round(it.calories||0), p=Math.round(it.protein||0);
-       d.foods.push({n:it.name||"Food",cal:cal,p:p}); tc+=cal; tp+=p;
-     });
+     var data=JSON.parse(txt), foods=data.foods||[], workouts=data.workouts||[];
+     if(!foods.length && !workouts.length){toast("Didn't catch any food or workout — try again.");return;}
+     var d=getDay(key(viewDate)), fc=0, fp=0, bc=0;
+     foods.forEach(function(it){var cal=Math.round(it.calories||0), p=Math.round(it.protein||0);
+       d.foods.push({n:it.name||"Food",cal:cal,p:p}); fc+=cal; fp+=p;});
+     workouts.forEach(function(w){var cal=Math.round(w.calories||0);
+       d.workouts.push({n:w.name||"Activity",cal:cal}); bc+=cal;});
      d.maintenance=false; save(K_DAYS,days);
      if(curView==="today")renderToday();
      if(onSuccess)onSuccess();
-     toast("✓ Logged "+items.length+" item"+(items.length>1?"s":"")+" · "+tc+" cal · "+tp+"g protein");
+     var parts=[];
+     if(foods.length)parts.push(foods.length+" food"+(foods.length>1?"s":"")+" · "+fc+" cal · "+fp+"g P");
+     if(workouts.length)parts.push(workouts.length+" activity · "+bc+" cal burn");
+     toast("✓ "+parts.join("   +   "));
    })
    .catch(function(e){toast("⚠️ "+(e.message||"Something went wrong"));})
    .then(function(){aiBusy=false;setAiBusy(false);});
@@ -884,7 +899,8 @@ function handlePhoto(file){
     try{b64=c.toDataURL("image/jpeg",0.85).split(",")[1];}
     catch(e){toast("⚠️ Couldn't read that photo.");return;}
     var note=$("chatInput").value.trim();
-    var prompt="This is a photo of food or drink I ate. Identify each distinct item, estimate the portions, and log the calories and protein."+
+    var prompt="This is a photo I took to log — usually food or drink, but it could be a workout summary screen (e.g. Apple Watch). "+
+      "If it's food, identify each item and estimate portions, calories and protein. If it's a workout, log the activity and its active calories burned."+
       (note?(" Extra context: "+note):"");
     runClaudeLog([{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},
                   {type:"text",text:prompt}], function(){$("chatInput").value="";});
