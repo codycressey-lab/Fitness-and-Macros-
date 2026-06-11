@@ -136,13 +136,13 @@
     display:none;padding:8px 12px 10px;
     background:linear-gradient(180deg,rgba(11,15,23,0),rgba(11,15,23,.92) 38%)}
   .chatbar.show{display:block}
-  .chatbar .inner{max-width:600px;margin:0 auto;display:flex;gap:8px;align-items:center;position:relative;
-    background:var(--card);border:1px solid var(--line);border-radius:15px;padding:5px 5px 5px 12px;
+  .chatbar .inner{max-width:600px;margin:0 auto;display:flex;gap:7px;align-items:center;position:relative;
+    background:var(--card);border:1px solid var(--line);border-radius:15px;padding:5px;
     box-shadow:0 10px 28px rgba(0,0,0,.45)}
-  .chatbar .spark{font-size:15px}
   .chatbar input{flex:1;background:none;border:none;color:var(--txt);font-size:15px;padding:9px 2px;outline:none}
   .chatbar button{background:var(--accent);color:#06231a;border:none;width:40px;height:40px;border-radius:11px;
     font-size:16px;font-weight:800;flex:0 0 auto}
+  .chatbar button.cam{background:var(--card2);border:1px solid var(--line);color:var(--txt);font-weight:400}
   .chatbar button:disabled{opacity:.5}
 
   /* Toast */
@@ -339,10 +339,11 @@
 
 <!-- ================= AI QUICK-LOG BAR ================= -->
 <div class="chatbar" id="chatbar"><div class="inner">
-  <span class="spark">✨</span>
-  <input id="chatInput" placeholder="Tell me what you ate…" autocomplete="off" />
+  <button id="camBtn" class="cam" aria-label="Photo of food">📷</button>
+  <input id="chatInput" placeholder="Say or 📷 what you ate…" autocomplete="off" />
   <button id="chatSend" aria-label="Log it">➤</button>
 </div></div>
+<input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" />
 
 <!-- ================= BOTTOM NAV ================= -->
 <div class="nav"><div class="inner">
@@ -814,48 +815,87 @@ function aiSystem(){
     "He tells you in plain language what he ate or drank. Return ONE structured item per distinct food or drink, "+
     "each with a realistic estimate of calories and protein in grams, scaled to the quantities he states "+
     "(e.g. \"3 chicken fillets\" means 3x a chicken breast). Round calories to the nearest 5 and protein to the nearest gram. "+
+    "If he sends a photo of his food, identify each distinct food and drink you can see and estimate portion sizes from the image. "+
     "When an item clearly matches one of his regular foods below, use those values (scaled by quantity):\n"+lib+
     "\n\nIgnore anything that is not food or drink (such as workouts). If nothing edible is described, return an empty items array.";
 }
 var aiBusy=false;
-function logViaAI(){
-  if(aiBusy) return;
-  var input=$("chatInput"), text=input.value.trim();
-  if(!text) return;
-  if(!settings.apiKey){toast("Add your Anthropic API key in Settings → AI Quick Log");switchView("settings");return;}
-  aiBusy=true;
-  var btn=$("chatSend"); btn.disabled=true; btn.textContent="…"; input.disabled=true;
-  var schema={type:"object",additionalProperties:false,required:["items"],properties:{
+function setAiBusy(b){
+  $("chatSend").disabled=b; $("camBtn").disabled=b; $("chatInput").disabled=b;
+  $("chatSend").textContent=b?"…":"➤";
+}
+function aiSchema(){
+  return {type:"object",additionalProperties:false,required:["items"],properties:{
     items:{type:"array",items:{type:"object",additionalProperties:false,required:["name","calories","protein"],
       properties:{name:{type:"string"},calories:{type:"integer"},protein:{type:"number"}}}}}};
+}
+// Core: send user content (string or content-block array) to Claude, log the items it returns.
+function runClaudeLog(userContent, onSuccess){
+  if(aiBusy) return;
+  if(!settings.apiKey){toast("Add your Anthropic API key in Settings → AI Quick Log");switchView("settings");return;}
+  aiBusy=true; setAiBusy(true);
   fetch("https://api.anthropic.com/v1/messages",{
     method:"POST",
     headers:{"content-type":"application/json","x-api-key":settings.apiKey,
       "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
     body:JSON.stringify({model:settings.aiModel||"claude-opus-4-8",max_tokens:1024,
-      system:aiSystem(),messages:[{role:"user",content:text}],
-      output_config:{format:{type:"json_schema",schema:schema}}})
+      system:aiSystem(),messages:[{role:"user",content:userContent}],
+      output_config:{format:{type:"json_schema",schema:aiSchema()}}})
   }).then(function(r){return r.json().then(function(j){return {ok:r.ok,status:r.status,j:j};});})
    .then(function(res){
      if(!res.ok){throw new Error((res.j&&res.j.error&&res.j.error.message)||("HTTP "+res.status));}
      if(res.j.stop_reason==="refusal"){throw new Error("That couldn't be logged.");}
      var txt=""; (res.j.content||[]).forEach(function(b){if(b.type==="text")txt+=b.text;});
      var items=(JSON.parse(txt).items)||[];
-     if(!items.length){toast("Didn't catch any food in that — try rephrasing.");return;}
+     if(!items.length){toast("Didn't catch any food — try again or add a note.");return;}
      var d=getDay(key(viewDate)), tc=0, tp=0;
      items.forEach(function(it){
        var cal=Math.round(it.calories||0), p=Math.round(it.protein||0);
        d.foods.push({n:it.name||"Food",cal:cal,p:p}); tc+=cal; tp+=p;
      });
      d.maintenance=false; save(K_DAYS,days);
-     input.value=""; if(curView==="today")renderToday();
+     if(curView==="today")renderToday();
+     if(onSuccess)onSuccess();
      toast("✓ Logged "+items.length+" item"+(items.length>1?"s":"")+" · "+tc+" cal · "+tp+"g protein");
    })
    .catch(function(e){toast("⚠️ "+(e.message||"Something went wrong"));})
-   .then(function(){aiBusy=false;btn.disabled=false;btn.textContent="➤";input.disabled=false;});
+   .then(function(){aiBusy=false;setAiBusy(false);});
+}
+// Text path
+function logViaAI(){
+  var input=$("chatInput"), text=input.value.trim();
+  if(!text) return;
+  runClaudeLog(text, function(){input.value="";});
+}
+// Photo path: downscale + convert to JPEG (handles HEIC, shrinks payload), then send with vision.
+function handlePhoto(file){
+  if(!file) return;
+  if(aiBusy) return;
+  if(!settings.apiKey){toast("Add your Anthropic API key in Settings → AI Quick Log");switchView("settings");return;}
+  var img=new Image(), url=URL.createObjectURL(file);
+  img.onload=function(){
+    URL.revokeObjectURL(url);
+    var max=1280, w=img.width||max, h=img.height||max;
+    if(w>=h && w>max){h=Math.round(h*max/w);w=max;}
+    else if(h>w && h>max){w=Math.round(w*max/h);h=max;}
+    var c=document.createElement("canvas"); c.width=w; c.height=h;
+    c.getContext("2d").drawImage(img,0,0,w,h);
+    var b64;
+    try{b64=c.toDataURL("image/jpeg",0.85).split(",")[1];}
+    catch(e){toast("⚠️ Couldn't read that photo.");return;}
+    var note=$("chatInput").value.trim();
+    var prompt="This is a photo of food or drink I ate. Identify each distinct item, estimate the portions, and log the calories and protein."+
+      (note?(" Extra context: "+note):"");
+    runClaudeLog([{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},
+                  {type:"text",text:prompt}], function(){$("chatInput").value="";});
+  };
+  img.onerror=function(){URL.revokeObjectURL(url);toast("⚠️ Couldn't open that photo.");};
+  img.src=url;
 }
 $("chatSend").addEventListener("click",logViaAI);
 $("chatInput").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();logViaAI();}});
+$("camBtn").addEventListener("click",function(){if(!aiBusy)$("photoInput").click();});
+$("photoInput").addEventListener("change",function(e){var f=e.target.files&&e.target.files[0];handlePhoto(f);e.target.value="";});
 
 /* ---------- go ---------- */
 renderToday();
