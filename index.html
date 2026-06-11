@@ -330,6 +330,24 @@
       (API usage is billed by Anthropic separately from any Claude subscription.)</div>
   </div>
 
+  <h2 class="sec">⌚ Apple Health Sync</h2>
+  <div class="card tight">
+    <div class="hint" style="margin-top:0">Apple won't let a web app read Health directly, so a quick Apple
+      <b>Shortcut</b> sends your workout's calories here. Set it up once (instructions below), and finishing a
+      workout logs the active burn automatically — no typing.</div>
+    <label>Your sync link (the Shortcut opens this)</label>
+    <input id="syncUrl" readonly>
+    <button class="btn" id="copySync">Copy sync link</button>
+    <div class="hint"><b>Shortcut recipe (one time):</b><br>
+      1. Shortcuts app → <b>+</b> → add action <b>Find Health Samples</b> → type <b>Active Energy</b>,
+         sort by <b>End Date</b>, limit <b>1</b>.<br>
+      2. Add <b>Get Numbers from Input</b> (the calories).<br>
+      3. Add <b>Text</b> = your sync link above, then <b>?burn=</b>, then the number, then <b>&amp;name=Workout</b>.<br>
+      4. Add <b>Open URLs</b> (that Text).<br>
+      5. Run it after a workout — the burn appears here. (Or, in the Automation tab, trigger it
+         “When a workout ends” to make it automatic.)</div>
+  </div>
+
   <h2 class="sec">Data</h2>
   <div class="card tight">
     <button class="btn" id="exportBtn">Export my data (copy JSON)</button>
@@ -698,6 +716,7 @@ function renderSettings(){
   $("setTdee").value=settings.tdee; $("setDefTgt").value=settings.deficitTarget;
   $("setProt").value=settings.proteinTarget; $("setCpp").value=settings.calPerLb;
   $("setApiKey").value=settings.apiKey||""; $("setModel").value=settings.aiModel||"claude-opus-4-8";
+  $("syncUrl").value=location.origin+location.pathname;
 }
 
 /* ---------- views ---------- */
@@ -786,6 +805,13 @@ $("saveAi").addEventListener("click",function(){
   settings.apiKey=$("setApiKey").value.trim();
   settings.aiModel=$("setModel").value;
   save(K_SET,settings);flash($("saveAi"),"Saved ✓");
+});
+$("copySync").addEventListener("click",function(){
+  var u=location.origin+location.pathname;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(u).then(function(){flash($("copySync"),"Copied ✓");},
+      function(){window.prompt("Copy your sync link:",u);});
+  } else window.prompt("Copy your sync link:",u);
 });
 $("exportBtn").addEventListener("click",function(){
   var payload=JSON.stringify({settings:settings,days:days},null,2);
@@ -913,7 +939,33 @@ $("chatInput").addEventListener("keydown",function(e){if(e.key==="Enter"){e.prev
 $("camBtn").addEventListener("click",function(){if(!aiBusy)$("photoInput").click();});
 $("photoInput").addEventListener("change",function(e){var f=e.target.files&&e.target.files[0];handlePhoto(f);e.target.value="";});
 
+/* ---------- Apple Health / Shortcuts ingestion ---------- */
+// A Shortcut opens this app with ?burn=540&name=Basketball (optionally &date=YYYY-MM-DD,
+// or &food=...&cal=...&protein=...). We log it, then strip the query so a refresh can't double-add.
+function ingestURLParams(){
+  if(!window.location.search) return;
+  var p; try{p=new URLSearchParams(window.location.search);}catch(e){return;}
+  var dk=p.get("date"); if(!dk||!/^\d{4}-\d{2}-\d{2}$/.test(dk)) dk=todayKey();
+  var changed=false, msgs=[];
+  var burn=parseFloat(p.get("burn"));
+  if(!isNaN(burn)&&burn>0){
+    var d=getDay(dk); d.workouts.push({n:(p.get("name")||"Apple Health workout"),cal:Math.round(burn)});
+    d.maintenance=false; changed=true; msgs.push(Math.round(burn)+" cal burn");
+  }
+  var cal=parseFloat(p.get("cal"));
+  if(!isNaN(cal)&&cal>0&&p.get("food")){
+    var d2=getDay(dk); d2.foods.push({n:p.get("food"),cal:Math.round(cal),p:Math.round(parseFloat(p.get("protein"))||0)});
+    d2.maintenance=false; changed=true; msgs.push(Math.round(cal)+" cal food");
+  }
+  if(changed){ save(K_DAYS,days); viewDate=parseKey(dk); }
+  if(window.history&&window.history.replaceState){
+    try{window.history.replaceState({},"",window.location.pathname);}catch(e){}
+  }
+  if(changed) setTimeout(function(){toast("⌚ Synced from Apple Health: "+msgs.join("  +  "));},300);
+}
+
 /* ---------- go ---------- */
+ingestURLParams();
 renderToday();
 $("chatbar").classList.add("show");
 if("serviceWorker" in navigator){navigator.serviceWorker.register("service-worker.js").catch(function(){});}
