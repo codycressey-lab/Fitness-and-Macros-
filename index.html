@@ -332,20 +332,20 @@
 
   <h2 class="sec">⌚ Apple Health Sync</h2>
   <div class="card tight">
-    <div class="hint" style="margin-top:0">Apple won't let a web app read Health directly, so a quick Apple
-      <b>Shortcut</b> sends your workout's calories here. Set it up once (instructions below), and finishing a
-      workout logs the active burn automatically — no typing.</div>
-    <label>Your sync link (the Shortcut opens this)</label>
-    <input id="syncUrl" readonly>
-    <button class="btn" id="copySync">Copy sync link</button>
-    <div class="hint"><b>Shortcut recipe (one time):</b><br>
-      1. Shortcuts app → <b>+</b> → add action <b>Find Health Samples</b> → type <b>Active Energy</b>,
-         sort by <b>End Date</b>, limit <b>1</b>.<br>
-      2. Add <b>Get Numbers from Input</b> (the calories).<br>
-      3. Add <b>Text</b> = your sync link above, then <b>?burn=</b>, then the number, then <b>&amp;name=Workout</b>.<br>
-      4. Add <b>Open URLs</b> (that Text).<br>
-      5. Run it after a workout — the burn appears here. (Or, in the Automation tab, trigger it
-         “When a workout ends” to make it automatic.)</div>
+    <div class="hint" style="margin-top:0">Your Apple Shortcut sends each workout's calories to a private cloud
+      inbox; this app checks that inbox and logs it — fully in the background, full-screen, no Safari.</div>
+    <label>Relay ID (from getpantry.cloud)</label>
+    <input id="relayId" placeholder="paste your Pantry ID" autocomplete="off">
+    <button class="btn primary" id="saveRelay">Save relay ID</button>
+    <label>Shortcut's POST address (paste into the Shortcut)</label>
+    <input id="relayUrl" readonly>
+    <button class="btn" id="copyRelay">Copy POST address</button>
+    <div class="hint"><b>One-time setup:</b><br>
+      1. Create a free pantry at <b>getpantry.cloud</b> (enter your email → it sends you a <b>Pantry ID</b>).<br>
+      2. Paste that ID above and tap <b>Save relay ID</b>.<br>
+      3. In your Shortcut, replace <b>Open URLs</b> with <b>Get Contents of URL</b> → Method <b>POST</b> →
+         JSON body: <b>burn</b> = your Sum, <b>name</b> = Workout → URL = the address above.<br>
+      Done — workouts sync silently, and you can set the automation to “When a workout ends.”</div>
   </div>
 
   <h2 class="sec">Data</h2>
@@ -412,7 +412,7 @@ var DEFAULT_SETTINGS={
   name:"Cody Cressey", age:38, height:"6'3\"",
   startWeight:202, goalWeight:185, startDate:"2026-04-17", goalDate:"2026-07-21",
   tdee:2390, deficitTarget:500, proteinTarget:190, calPerLb:3500,
-  apiKey:"", aiModel:"claude-opus-4-8"
+  apiKey:"", aiModel:"claude-opus-4-8", relayId:"", lastRelay:""
 };
 
 /* ---------- libraries ---------- */
@@ -716,7 +716,8 @@ function renderSettings(){
   $("setTdee").value=settings.tdee; $("setDefTgt").value=settings.deficitTarget;
   $("setProt").value=settings.proteinTarget; $("setCpp").value=settings.calPerLb;
   $("setApiKey").value=settings.apiKey||""; $("setModel").value=settings.aiModel||"claude-opus-4-8";
-  $("syncUrl").value=location.origin+location.pathname;
+  $("relayId").value=settings.relayId||"";
+  $("relayUrl").value=settings.relayId?relayEndpoint():"(save your Relay ID first)";
 }
 
 /* ---------- views ---------- */
@@ -806,12 +807,19 @@ $("saveAi").addEventListener("click",function(){
   settings.aiModel=$("setModel").value;
   save(K_SET,settings);flash($("saveAi"),"Saved ✓");
 });
-$("copySync").addEventListener("click",function(){
-  var u=location.origin+location.pathname;
+$("saveRelay").addEventListener("click",function(){
+  settings.relayId=$("relayId").value.trim();
+  save(K_SET,settings);
+  $("relayUrl").value=settings.relayId?relayEndpoint():"(save your Relay ID first)";
+  flash($("saveRelay"),"Saved ✓");
+  syncFromRelay();
+});
+$("copyRelay").addEventListener("click",function(){
+  var u=$("relayUrl").value;
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(u).then(function(){flash($("copySync"),"Copied ✓");},
-      function(){window.prompt("Copy your sync link:",u);});
-  } else window.prompt("Copy your sync link:",u);
+    navigator.clipboard.writeText(u).then(function(){flash($("copyRelay"),"Copied ✓");},
+      function(){window.prompt("Copy this address:",u);});
+  } else window.prompt("Copy this address:",u);
 });
 $("exportBtn").addEventListener("click",function(){
   var payload=JSON.stringify({settings:settings,days:days},null,2);
@@ -964,8 +972,39 @@ function ingestURLParams(){
   if(changed) setTimeout(function(){toast("⌚ Synced from Apple Health: "+msgs.join("  +  "));},300);
 }
 
+/* ---------- relay sync (Option B: cloud inbox) ---------- */
+// The Shortcut POSTs {burn, name} to a private Pantry basket. The app reads it on
+// launch / whenever it returns to the foreground, and logs any workout it hasn't seen.
+function relayEndpoint(){
+  return "https://getpantry.cloud/apiv1/pantry/"+encodeURIComponent(settings.relayId)+"/basket/workout";
+}
+var relayBusy=false;
+function syncFromRelay(){
+  if(!settings.relayId || relayBusy) return;
+  relayBusy=true;
+  fetch(relayEndpoint(),{cache:"no-store"})
+   .then(function(r){return r.ok?r.json():null;})
+   .then(function(obj){
+     if(!obj) return;
+     var burn=parseFloat(obj.burn); if(isNaN(burn)||burn<=0) return;
+     var payload=JSON.stringify({b:Math.round(burn),n:obj.name||""});
+     if(payload===settings.lastRelay) return; // already logged this workout
+     var d=getDay(todayKey());
+     d.workouts.push({n:(obj.name||"Apple Health workout"),cal:Math.round(burn)});
+     d.maintenance=false;
+     settings.lastRelay=payload; save(K_SET,settings); save(K_DAYS,days);
+     if(curView==="today")renderToday();
+     setTimeout(function(){toast("⌚ Synced from Apple Health: "+Math.round(burn)+" cal burn");},300);
+   })
+   .catch(function(){})
+   .then(function(){relayBusy=false;});
+}
+document.addEventListener("visibilitychange",function(){if(!document.hidden)syncFromRelay();});
+window.addEventListener("focus",syncFromRelay);
+
 /* ---------- go ---------- */
 ingestURLParams();
+syncFromRelay();
 renderToday();
 $("chatbar").classList.add("show");
 if("serviceWorker" in navigator){navigator.serviceWorker.register("service-worker.js").catch(function(){});}
