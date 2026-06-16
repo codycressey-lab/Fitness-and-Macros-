@@ -94,6 +94,11 @@
   .gbar{height:12px;background:var(--card2);border-radius:99px;overflow:hidden;position:relative}
   .gbar>div{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:99px}
   .gscale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}
+  .weighin{display:flex;gap:10px;margin-top:15px}
+  .weighin input{flex:1}
+  .weighin .btn{margin-top:0;width:auto;flex:0 0 auto;padding:13px 18px}
+  .wihist{margin-top:10px;font-size:12px;color:var(--muted);line-height:1.8}
+  .wihist b{color:var(--txt)}
 
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px}
@@ -249,6 +254,11 @@
     </div>
     <div class="gbar"><div id="gBar"></div></div>
     <div class="gscale"><span id="gStart">202</span><span id="gGoal">185 goal</span></div>
+    <div class="weighin">
+      <input id="wiInput" type="number" inputmode="decimal" placeholder="Log today's weight (lbs)">
+      <button class="btn primary" id="wiSave">Weigh in</button>
+    </div>
+    <div class="wihist" id="wiHistory"></div>
   </div>
 
   <h2 class="sec">This Week</h2>
@@ -620,6 +630,7 @@ function cumulativeDeficit(uptoKey){
   allKeysSorted().forEach(function(k){
     if(uptoKey && k>uptoKey) return;
     var d=days[k]; if(d.maintenance) return;
+    if(!isLogged(d)) return;           // skip empty / weigh-in-only days
     sum+=dTotals(d).deficit;
   });
   return sum;
@@ -648,9 +659,17 @@ function renderTrends(){
   $("gStart").textContent=settings.startWeight+" start";
   $("gGoal").textContent=settings.goalWeight+" goal";
 
+  // weigh-in input (prefill today's) + recent weigh-in history
+  var tday=days[todayKey()];
+  $("wiInput").value=(tday&&tday.weight!=null)?tday.weight:"";
+  var wkeys=allKeysSorted().filter(function(k){return days[k].weight!=null;}).reverse().slice(0,6);
+  $("wiHistory").innerHTML = wkeys.length
+    ? "Recent weigh-ins: "+wkeys.map(function(k){return parseKey(k).toLocaleDateString(undefined,{month:"short",day:"numeric"})+" <b>"+days[k].weight+"</b>";}).join("  ·  ")
+    : "No weigh-ins logged yet — add one above to set your current weight.";
+
   // this week (last 7 days incl today)
   var wkDef=0, t=new Date();t.setHours(0,0,0,0);
-  for(var i=0;i<7;i++){var dk=key(new Date(t-i*86400000));if(days[dk]&&!days[dk].maintenance)wkDef+=dTotals(days[dk]).deficit;}
+  for(var i=0;i<7;i++){var dk=key(new Date(t-i*86400000));if(days[dk]&&isLogged(days[dk]))wkDef+=dTotals(days[dk]).deficit;}
   $("wkDef").textContent=fmtNum(wkDef)+" cal";
   $("wkBar").style.width=Math.min(100,Math.max(0,wkDef/3500*100))+"%";
   var wkGo=3500-wkDef;
@@ -689,13 +708,15 @@ function renderTrends(){
 
   // recent list (last 14, newest first)
   var box=$("recentList");box.innerHTML="";
-  var recent=keys.slice(-14).reverse();
+  var recent=keys.filter(function(k){var d=days[k];return d.maintenance||isLogged(d)||d.weight!=null;}).slice(-14).reverse();
   recent.forEach(function(k){
     var d=days[k], tt=dTotals(d), row=document.createElement("div");
     row.className="dayrow";
     var label=parseKey(k).toLocaleDateString(undefined,{month:"short",day:"numeric"});
     if(d.maintenance){
       row.innerHTML='<div class="dd">'+label+'</div><div class="ddef" style="color:var(--warn)">Maintenance</div><div class="dp"></div><div class="db"></div>';
+    }else if(!isLogged(d)){
+      row.innerHTML='<div class="dd">'+label+'</div><div class="ddef" style="color:var(--accent2);font-weight:600">⚖ '+(d.weight!=null?d.weight+' lbs':'—')+'</div><div class="dp"></div><div class="db"></div>';
     }else{
       var col=tt.deficit>=settings.deficitTarget?"var(--good)":(tt.deficit>=0?"var(--txt)":"var(--bad)");
       row.innerHTML='<div class="dd">'+label+'</div>'+
@@ -791,6 +812,15 @@ $("saveDay").addEventListener("click",function(){
   d.note=$("dNoteInput").value.trim();
   save(K_DAYS,days);renderToday();
   flash($("saveDay"),"Saved ✓");
+});
+
+/* ---------- weigh-in (Trends) ---------- */
+$("wiSave").addEventListener("click",function(){
+  var v=parseFloat($("wiInput").value);
+  if(isNaN(v)||v<=0){toast("Enter your weight first");return;}
+  var d=getDay(todayKey()); d.weight=Math.round(v*10)/10;
+  save(K_DAYS,days); renderTrends();
+  flash($("wiSave"),"Logged ✓");
 });
 
 /* ---------- settings save ---------- */
