@@ -906,20 +906,41 @@ function aiSchema(){
       properties:{name:{type:"string"},calories:{type:"integer"}}}}}};
 }
 // Core: send user content (string or content-block array) to Claude, log the items it returns.
+// Calls Claude, auto-retrying transient overload/rate-limit/5xx errors with backoff.
+function claudeFetch(body, attempt){
+  attempt = attempt||0;
+  return fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"content-type":"application/json","x-api-key":settings.apiKey,
+      "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify(body)
+  }).then(function(r){return r.json().then(function(j){return {ok:r.ok,status:r.status,j:j};});})
+   .then(function(res){
+     var retryable = !res.ok && (res.status===429 || res.status>=500);
+     if(retryable && attempt<3){
+       return new Promise(function(rs){setTimeout(rs,Math.pow(2,attempt)*1200);}).then(function(){return claudeFetch(body,attempt+1);});
+     }
+     return res;
+   })
+   .catch(function(e){
+     if(attempt<3){return new Promise(function(rs){setTimeout(rs,Math.pow(2,attempt)*1200);}).then(function(){return claudeFetch(body,attempt+1);});}
+     throw e;
+   });
+}
 function runClaudeLog(userContent, onSuccess){
   if(aiBusy) return;
   if(!settings.apiKey){toast("Add your Anthropic API key in Settings → AI Quick Log");switchView("settings");return;}
   aiBusy=true; setAiBusy(true);
-  fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",
-    headers:{"content-type":"application/json","x-api-key":settings.apiKey,
-      "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-    body:JSON.stringify({model:settings.aiModel||"claude-opus-4-8",max_tokens:1024,
+  claudeFetch({model:settings.aiModel||"claude-opus-4-8",max_tokens:1024,
       system:aiSystem(),messages:[{role:"user",content:userContent}],
       output_config:{format:{type:"json_schema",schema:aiSchema()}}})
-  }).then(function(r){return r.json().then(function(j){return {ok:r.ok,status:r.status,j:j};});})
    .then(function(res){
-     if(!res.ok){throw new Error((res.j&&res.j.error&&res.j.error.message)||("HTTP "+res.status));}
+     if(!res.ok){
+       var et=res.j&&res.j.error&&res.j.error.type;
+       if(res.status===529||et==="overloaded_error") throw new Error("Claude's servers are busy right now — give it a few seconds and tap send again.");
+       if(res.status===429) throw new Error("Hit a rate limit — wait a moment and try again.");
+       throw new Error((res.j&&res.j.error&&res.j.error.message)||("HTTP "+res.status));
+     }
      if(res.j.stop_reason==="refusal"){throw new Error("That couldn't be logged.");}
      var txt=""; (res.j.content||[]).forEach(function(b){if(b.type==="text")txt+=b.text;});
      var data=JSON.parse(txt), foods=data.foods||[], workouts=data.workouts||[];
