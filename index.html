@@ -173,13 +173,26 @@
   .quick button .q{color:var(--muted);font-size:11px}
   .btnrow{display:flex;gap:10px;margin-top:16px}.btnrow .btn{margin-top:0}
 
+  /* Maintenance macro bars */
+  .macrorow{display:flex;justify-content:space-between;font-size:13px;margin:0 0 6px}
+  .macrorow .mname{font-weight:700}
+  .macrorow .mval{color:var(--muted)}
+
+  /* Mode selector */
+  .modesel{display:flex;gap:8px;margin-top:2px}
+  .modesel button{flex:1;background:var(--card2);border:1px solid var(--line);color:var(--muted);
+    font-weight:700;font-size:14px;padding:12px;border-radius:12px}
+  .modesel button.on{background:var(--accent);color:#06231a;border-color:var(--accent)}
+  .season{margin:8px 0}
+  .season .btn{font-size:14px}
+
   .hidden{display:none !important}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="title">Operation Get Shredded</div>
+  <div class="title" id="appTitle">Cut Mode</div>
   <h1 id="hTitle">Today</h1>
 </header>
 
@@ -194,32 +207,58 @@
     <button class="navbtn" id="nextDay">›</button>
   </div>
 
-  <div class="card">
-    <div class="hero">
-      <div>
-        <div class="num" id="defNum">0</div>
-        <div class="unit">cal deficit</div>
+  <div id="cutBlock">
+    <div class="card">
+      <div class="hero">
+        <div>
+          <div class="num" id="defNum">0</div>
+          <div class="unit">cal deficit</div>
+        </div>
+        <div class="right">
+          <div class="lbl">vs target</div>
+          <span class="pill" id="defPill">—</span>
+          <div class="eqn" id="defEqn"></div>
+        </div>
       </div>
-      <div class="right">
-        <div class="lbl">vs target</div>
-        <span class="pill" id="defPill">—</span>
-        <div class="eqn" id="defEqn"></div>
-      </div>
+    </div>
+
+    <div class="strip">
+      <div class="cell"><div class="v" id="sIn">0</div><div class="k">Cal In</div></div>
+      <div class="cell"><div class="v" id="sBurn">0</div><div class="k">Active Burn</div></div>
+      <div class="cell"><div class="v" id="sOut">0</div><div class="k">Cal Out</div></div>
+      <div class="cell"><div class="v" id="sP">0</div><div class="k">Protein In</div></div>
+      <div class="cell"><div class="v" id="sPT">190</div><div class="k">Protein Tgt</div></div>
+      <div class="cell hl"><div class="v" id="sPG">0</div><div class="k">Protein To Go</div></div>
+    </div>
+
+    <div class="card tight" style="margin-top:11px">
+      <div class="pbar-top"><span class="nm">Protein</span><span class="vl" id="pbarVal">0 / 190g</span></div>
+      <div class="bar"><div id="pbar"></div></div>
     </div>
   </div>
 
-  <div class="strip">
-    <div class="cell"><div class="v" id="sIn">0</div><div class="k">Cal In</div></div>
-    <div class="cell"><div class="v" id="sBurn">0</div><div class="k">Active Burn</div></div>
-    <div class="cell"><div class="v" id="sOut">0</div><div class="k">Cal Out</div></div>
-    <div class="cell"><div class="v" id="sP">0</div><div class="k">Protein In</div></div>
-    <div class="cell"><div class="v" id="sPT">190</div><div class="k">Protein Tgt</div></div>
-    <div class="cell hl"><div class="v" id="sPG">0</div><div class="k">Protein To Go</div></div>
-  </div>
-
-  <div class="card tight" style="margin-top:11px">
-    <div class="pbar-top"><span class="nm">Protein</span><span class="vl" id="pbarVal">0 / 190g</span></div>
-    <div class="bar"><div id="pbar"></div></div>
+  <div id="maintBlock" class="hidden">
+    <div class="card">
+      <div class="hero">
+        <div>
+          <div class="num" id="mLeft">0</div>
+          <div class="unit" id="mLeftUnit">cal left</div>
+        </div>
+        <div class="right">
+          <div class="lbl">Calories</div>
+          <span class="pill" id="mPill">—</span>
+          <div class="eqn" id="mEqn"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card tight" style="margin-top:11px">
+      <div class="macrorow"><span class="mname" style="color:var(--protein)">Protein</span><span class="mval" id="mPval">0 / 190g</span></div>
+      <div class="bar"><div id="mPbar" style="background:var(--protein)"></div></div>
+      <div class="macrorow" style="margin-top:13px"><span class="mname" style="color:var(--accent2)">Carbs</span><span class="mval" id="mCval">0 / 265g</span></div>
+      <div class="bar"><div id="mCbar" style="background:var(--accent2)"></div></div>
+      <div class="macrorow" style="margin-top:13px"><span class="mname" style="color:var(--burn)">Fat</span><span class="mval" id="mFval">0 / 75g</span></div>
+      <div class="bar"><div id="mFbar" style="background:var(--burn)"></div></div>
+    </div>
   </div>
 
   <div class="noteline hidden" id="dayNote"></div>
@@ -252,8 +291,10 @@
       </div>
       <div class="meta" id="gMeta"></div>
     </div>
-    <div class="gbar"><div id="gBar"></div></div>
-    <div class="gscale"><span id="gStart">202</span><span id="gGoal">185 goal</span></div>
+    <div id="goalProgress">
+      <div class="gbar"><div id="gBar"></div></div>
+      <div class="gscale"><span id="gStart">202</span><span id="gGoal">185 goal</span></div>
+    </div>
     <div class="weighin">
       <input id="wiInput" type="number" inputmode="decimal" placeholder="Log today's weight (lbs)">
       <button class="btn primary" id="wiSave">Weigh in</button>
@@ -263,22 +304,13 @@
 
   <h2 class="sec">This Week</h2>
   <div class="card week">
-    <div class="wk"><span>Deficit so far</span><b id="wkDef">0 cal</b></div>
+    <div class="wk"><span id="wkLabel">Deficit so far</span><b id="wkDef">0 cal</b></div>
     <div class="bar"><div id="wkBar" style="background:linear-gradient(90deg,var(--accent2),var(--accent))"></div></div>
     <div class="hint" id="wkHint"></div>
   </div>
 
-  <h2 class="sec">All-Time Stats</h2>
-  <div class="grid2">
-    <div class="stat"><div class="v" id="stLost">0</div><div class="k">lbs lost (est)</div></div>
-    <div class="stat"><div class="v" id="stToGo">0</div><div class="k">lbs to goal</div></div>
-    <div class="stat"><div class="v" id="stCum">0</div><div class="k">total deficit (cal)</div></div>
-    <div class="stat"><div class="v" id="stAvg">0</div><div class="k">avg deficit / active day</div></div>
-    <div class="stat"><div class="v" id="stDays">0</div><div class="k">days logged</div></div>
-    <div class="stat"><div class="v" id="stProtein">0</div><div class="k">protein-target days (≥190)</div></div>
-    <div class="stat"><div class="v" id="stBest">0</div><div class="k">best single-day deficit</div></div>
-    <div class="stat"><div class="v" id="stProj">—</div><div class="k">projected to hit goal</div></div>
-  </div>
+  <h2 class="sec" id="statsTitle">This Cut</h2>
+  <div class="grid2" id="statGrid"></div>
 
   <h2 class="sec">Recent Days</h2>
   <div class="card" style="padding:4px 0" id="recentList"></div>
@@ -295,7 +327,22 @@
     </div>
   </div>
 
-  <h2 class="sec">Goal</h2>
+  <h2 class="sec">Current Phase</h2>
+  <div class="card tight">
+    <label style="margin-top:0">Mode</label>
+    <div class="modesel">
+      <button data-mode="cut" id="modeCut">🔻 Cut</button>
+      <button data-mode="maintain" id="modeMaint">🔄 Maintenance</button>
+    </div>
+    <label>This phase started</label>
+    <input id="seasonStartInp" type="date">
+    <button class="btn danger" id="endSeason">End &amp; archive this phase</button>
+    <div class="hint"><b>Cut</b> chases a daily calorie deficit. <b>Maintenance</b> targets calories + protein/carbs/fat
+      to build muscle and stay lean (treats on weekends are fine — it's the weekly average that matters).
+      Ending a phase saves a snapshot to <b>Past Seasons</b> and starts a fresh phase from today.</div>
+  </div>
+
+  <h2 class="sec">Goal (Cut)</h2>
   <div class="card tight">
     <div class="row">
       <div><label style="margin-top:0">Start weight</label><input id="setStartW" type="number" inputmode="decimal"></div>
@@ -307,7 +354,7 @@
     </div>
   </div>
 
-  <h2 class="sec">Daily Targets</h2>
+  <h2 class="sec">Cut Targets</h2>
   <div class="card tight">
     <div class="row">
       <div><label style="margin-top:0">TDEE (default)</label><input id="setTdee" type="number" inputmode="numeric"></div>
@@ -317,8 +364,24 @@
       <div><label>Protein target (g)</label><input id="setProt" type="number" inputmode="numeric"></div>
       <div><label>Cal per lb</label><input id="setCpp" type="number" inputmode="numeric"></div>
     </div>
-    <button class="btn primary" id="saveSettings">Save settings</button>
-    <div class="hint">Everything is stored only on this phone. Changing TDEE here only affects <b>new</b> days; past days keep the TDEE they were logged with.</div>
+    <button class="btn primary" id="saveSettings">Save cut targets</button>
+    <div class="hint">Used in <b>Cut</b> mode. Stored only on this phone. Changing TDEE here only affects <b>new</b> days; past days keep the TDEE they were logged with.</div>
+  </div>
+
+  <h2 class="sec">Maintenance Targets</h2>
+  <div class="card tight">
+    <div class="row">
+      <div><label style="margin-top:0">Calories</label><input id="setMCal" type="number" inputmode="numeric"></div>
+      <div><label style="margin-top:0">Protein (g)</label><input id="setMP" type="number" inputmode="numeric"></div>
+    </div>
+    <div class="row">
+      <div><label>Carbs (g)</label><input id="setMC" type="number" inputmode="numeric"></div>
+      <div><label>Fat (g)</label><input id="setMF" type="number" inputmode="numeric"></div>
+    </div>
+    <button class="btn primary" id="saveMaint">Save maintenance targets</button>
+    <div class="hint">Used in <b>Maintenance</b> mode. Recommended for a lean, muscular ~190 lb build:
+      <b>2,500 cal · 190g protein · 265g carbs · 75g fat</b>. High protein holds/builds muscle, carbs fuel training,
+      and you can eat back workout calories on training days. Adjust as you learn your body.</div>
   </div>
 
   <h2 class="sec">✨ AI Quick Log</h2>
@@ -358,6 +421,9 @@
       Done — workouts sync silently, and you can set the automation to “When a workout ends.”</div>
   </div>
 
+  <h2 class="sec">Past Seasons</h2>
+  <div id="seasonList"></div>
+
   <h2 class="sec">Data</h2>
   <div class="card tight">
     <button class="btn" id="exportBtn">Export my data (copy JSON)</button>
@@ -389,6 +455,10 @@
   <div class="row">
     <div><label>Calories</label><input id="fCal" type="number" inputmode="numeric" placeholder="0"></div>
     <div><label>Protein (g)</label><input id="fP" type="number" inputmode="decimal" placeholder="0"></div>
+  </div>
+  <div class="row">
+    <div><label>Carbs (g)</label><input id="fC" type="number" inputmode="decimal" placeholder="0"></div>
+    <div><label>Fat (g)</label><input id="fF" type="number" inputmode="decimal" placeholder="0"></div>
   </div>
   <div class="btnrow">
     <button class="btn" id="fCancel">Cancel</button>
@@ -422,17 +492,20 @@ var DEFAULT_SETTINGS={
   name:"Cody Cressey", age:38, height:"6'3\"",
   startWeight:202, goalWeight:185, startDate:"2026-04-17", goalDate:"2026-07-21",
   tdee:2390, deficitTarget:500, proteinTarget:190, calPerLb:3500,
+  mode:"cut", maintCal:2500, maintProtein:190, maintCarb:265, maintFat:75,
+  seasonStart:"2026-04-17", seasons:[],
   apiKey:"", aiModel:"claude-opus-4-8", relayId:"", lastRelay:""
 };
 
 /* ---------- libraries ---------- */
+// [name, cal, protein, carbs, fat]
 var FOOD_LIB=[
-  ["Protein shake 50g",250,50],["Protein shake 45g",225,45],["Protein shake 40g",200,40],
-  ["Protein shake 25g",125,25],["Coffee w/ milk",20,1],["Yogurt+honey+granola",270,17],
-  ["Yogurt+PB granola",370,20],["Costco burrito bowl",390,30],["Perfect Bar",340,17],
-  ["Chomps stick",100,10],["Jack Link's stick",140,23],["Chicken skewer",90,14],
-  ["Chicken salad w21 (cup)",210,28],["Beef+sweet potato bowl",600,35],["Banana",105,1],
-  ["Cereal bowl",300,5],["Whole milk 8oz",150,8],["Dave's bread slice",120,5],["NA beer",80,1]
+  ["Protein shake 50g",250,50,5,3],["Protein shake 45g",225,45,4,2],["Protein shake 40g",200,40,4,2],
+  ["Protein shake 25g",125,25,2,1],["Coffee w/ milk",20,1,2,1],["Yogurt+honey+granola",270,17,38,6],
+  ["Yogurt+PB granola",370,20,40,14],["Costco burrito bowl",390,30,40,12],["Perfect Bar",340,17,26,19],
+  ["Chomps stick",100,10,0,7],["Jack Link's stick",140,23,5,3],["Chicken skewer",90,14,1,3],
+  ["Chicken salad w21 (cup)",210,28,4,9],["Beef+sweet potato bowl",600,35,45,28],["Banana",105,1,27,0],
+  ["Cereal bowl",300,5,60,5],["Whole milk 8oz",150,8,12,8],["Dave's bread slice",120,5,22,2],["NA beer",80,1,18,0]
 ];
 var BURN_LIB=[
   ["18 holes walked",1400],["18 holes walked (hilly)",1500],["18 holes cart",450],
@@ -531,7 +604,7 @@ function seedDays(){
 var settings=load(K_SET,null);
 if(!settings){settings=JSON.parse(JSON.stringify(DEFAULT_SETTINGS));save(K_SET,settings);}
 // backfill any keys added in later versions
-for(var sk in DEFAULT_SETTINGS){if(!(sk in settings))settings[sk]=DEFAULT_SETTINGS[sk];}
+for(var sk in DEFAULT_SETTINGS){if(!(sk in settings))settings[sk]=JSON.parse(JSON.stringify(DEFAULT_SETTINGS[sk]));}
 var days=load(K_DAYS,null);
 if(!days){days=seedDays();save(K_DAYS,days);}
 
@@ -545,11 +618,11 @@ function getDay(k){
   return days[k];
 }
 function dTotals(d){
-  var calIn=0,p=0,burn=0;
-  (d.foods||[]).forEach(function(f){calIn+=+f.cal||0;p+=+f.p||0;});
+  var calIn=0,p=0,carbs=0,fat=0,burn=0;
+  (d.foods||[]).forEach(function(f){calIn+=+f.cal||0;p+=+f.p||0;carbs+=+f.c||0;fat+=+f.f||0;});
   (d.workouts||[]).forEach(function(w){burn+=+w.cal||0;});
   var tdee=+d.tdee||settings.tdee;
-  return {calIn:calIn,protein:p,burn:burn,tdee:tdee,calOut:tdee+burn,deficit:(tdee+burn)-calIn};
+  return {calIn:calIn,protein:p,carbs:carbs,fat:fat,burn:burn,tdee:tdee,calOut:tdee+burn,deficit:(tdee+burn)-calIn};
 }
 function isLogged(d){return d && !d.maintenance && ((d.foods&&d.foods.length)||(d.workouts&&d.workouts.length));}
 function fmtNum(n){return Math.round(n).toLocaleString();}
@@ -562,44 +635,63 @@ function relDate(d){
 }
 
 /* ---------- render TODAY ---------- */
+function macroBar(prefix,val,tgt){
+  var pct=tgt>0?Math.min(100,val/tgt*100):0;
+  $(prefix+"bar").style.width=pct+"%";
+  $(prefix+"val").textContent=Math.round(val)+" / "+Math.round(tgt)+"g";
+}
 function renderToday(){
   var k=key(viewDate), d=getDay(k), t=dTotals(d);
   $("dName").firstChild.nodeValue=relDate(viewDate)+" ";
   $("dDate").textContent=viewDate.toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"});
   $("todayPill").classList.toggle("hidden", k===todayKey());
+  $("appTitle").textContent=settings.mode==="maintain"?"Maintenance Mode":"Cut Mode";
 
-  // hero
-  $("defNum").textContent=fmtNum(t.deficit);
-  var tgt=settings.deficitTarget, pill=$("defPill");
-  if(d.maintenance){pill.className="pill warn";pill.textContent="Maintenance day";}
-  else if(t.deficit>=tgt){pill.className="pill good";pill.textContent="✓ "+fmtNum(t.deficit-tgt)+" over "+tgt+" target";}
-  else if(t.deficit>=0){pill.className="pill warn";pill.textContent=fmtNum(tgt-t.deficit)+" under "+tgt+" target";}
-  else {pill.className="pill bad";pill.textContent="Surplus of "+fmtNum(-t.deficit);}
-  $("defEqn").innerHTML="<b>"+fmtNum(t.calOut)+"</b> out (TDEE "+fmtNum(t.tdee)+" + burn "+fmtNum(t.burn)+
-    ") − <b>"+fmtNum(t.calIn)+"</b> in";
+  var maint=settings.mode==="maintain";
+  $("cutBlock").classList.toggle("hidden", maint);
+  $("maintBlock").classList.toggle("hidden", !maint);
 
-  // strip
-  $("sIn").textContent=fmtNum(t.calIn);
-  $("sBurn").textContent=fmtNum(t.burn);
-  $("sOut").textContent=fmtNum(t.calOut);
-  $("sP").textContent=Math.round(t.protein);
-  $("sPT").textContent=settings.proteinTarget;
-  $("sPG").textContent=Math.max(0,settings.proteinTarget-Math.round(t.protein));
+  if(!maint){
+    $("defNum").textContent=fmtNum(t.deficit);
+    var tgt=settings.deficitTarget, pill=$("defPill");
+    if(d.maintenance){pill.className="pill warn";pill.textContent="Maintenance day";}
+    else if(t.deficit>=tgt){pill.className="pill good";pill.textContent="✓ "+fmtNum(t.deficit-tgt)+" over "+tgt+" target";}
+    else if(t.deficit>=0){pill.className="pill warn";pill.textContent=fmtNum(tgt-t.deficit)+" under "+tgt+" target";}
+    else {pill.className="pill bad";pill.textContent="Surplus of "+fmtNum(-t.deficit);}
+    $("defEqn").innerHTML="<b>"+fmtNum(t.calOut)+"</b> out (TDEE "+fmtNum(t.tdee)+" + burn "+fmtNum(t.burn)+
+      ") − <b>"+fmtNum(t.calIn)+"</b> in";
+    $("sIn").textContent=fmtNum(t.calIn);
+    $("sBurn").textContent=fmtNum(t.burn);
+    $("sOut").textContent=fmtNum(t.calOut);
+    $("sP").textContent=Math.round(t.protein);
+    $("sPT").textContent=settings.proteinTarget;
+    $("sPG").textContent=Math.max(0,settings.proteinTarget-Math.round(t.protein));
+    var pct=settings.proteinTarget>0?Math.min(100,t.protein/settings.proteinTarget*100):0;
+    $("pbar").style.width=pct+"%";
+    $("pbarVal").textContent=Math.round(t.protein)+" / "+settings.proteinTarget+"g";
+  } else {
+    var mcal=+settings.maintCal||2500;
+    var allowance=mcal+t.burn, left=allowance-t.calIn;
+    $("mLeft").textContent=fmtNum(Math.abs(left));
+    $("mLeftUnit").textContent=left>=0?"cal left":"cal over";
+    var mp=$("mPill");
+    if(d.maintenance){mp.className="pill warn";mp.textContent="Off day";}
+    else if(left>=0){mp.className="pill good";mp.textContent="✓ "+fmtNum(left)+" cal to target";}
+    else if(left>=-300){mp.className="pill warn";mp.textContent=fmtNum(-left)+" over — fine on a treat day";}
+    else {mp.className="pill bad";mp.textContent=fmtNum(-left)+" over target";}
+    $("mEqn").innerHTML="Target <b>"+fmtNum(mcal)+"</b> + burn "+fmtNum(t.burn)+" = <b>"+fmtNum(allowance)+
+      "</b> allowance − "+fmtNum(t.calIn)+" eaten";
+    macroBar("mP",t.protein,+settings.maintProtein||190);
+    macroBar("mC",t.carbs,+settings.maintCarb||265);
+    macroBar("mF",t.fat,+settings.maintFat||75);
+  }
 
-  // protein bar
-  var pct=settings.proteinTarget>0?Math.min(100,t.protein/settings.proteinTarget*100):0;
-  $("pbar").style.width=pct+"%";
-  $("pbarVal").textContent=Math.round(t.protein)+" / "+settings.proteinTarget+"g";
-
-  // note line
   if(d.note){$("dayNote").textContent="“"+d.note+"”";$("dayNote").classList.remove("hidden");}
   else $("dayNote").classList.add("hidden");
 
-  // lists
   renderItems("foodList",d.foods,"food",true);
   renderItems("burnList",d.workouts,"burn",false);
 
-  // day settings inputs
   $("dTdee").value=t.tdee;
   $("dWeight").value=d.weight!=null?d.weight:"";
   $("dNoteInput").value=d.note||"";
@@ -611,7 +703,10 @@ function renderItems(elId,arr,type,showP){
   }
   (arr||[]).forEach(function(it,i){
     var row=document.createElement("div");row.className="item";
-    var sub= showP ? (Math.round(it.p||0)+"g protein") : "burned";
+    var sub;
+    if(showP){var extra=((it.c||0)||(it.f||0))?(" · C "+Math.round(it.c||0)+"g · F "+Math.round(it.f||0)+"g"):"";
+      sub="P "+Math.round(it.p||0)+"g"+extra;}
+    else sub="burned";
     var amt= showP ? fmtNum(it.cal)+'<span class="s">cal</span>' : fmtNum(it.cal)+'<span class="s">cal</span>';
     row.innerHTML='<div class="info"><div class="nm"></div><div class="mc">'+sub+'</div></div>'+
       '<div class="amt">'+amt+'</div><div class="del">✕</div>';
@@ -646,20 +741,48 @@ function estWeightNow(){
   var since=cumulativeDeficit() - cumulativeDeficit(wi.k);
   return wi.w - since/settings.calPerLb;
 }
+// Stats over a date range [startKey, endKey] (used for the current phase and archived seasons)
+function phaseStats(startKey,endKey){
+  var s={days:0,activeDays:0,totDef:0,protHits:0,best:-1e9,totCal:0,totP:0,totC:0,totF:0,macroHits:0};
+  var pTgt=settings.mode==="maintain"?(+settings.maintProtein||190):(+settings.proteinTarget||190);
+  allKeysSorted().forEach(function(k){
+    if(k<startKey||k>endKey) return;
+    var d=days[k]; if(d.maintenance||!isLogged(d)) return;
+    var tt=dTotals(d);
+    s.days++; s.activeDays++;
+    s.totDef+=tt.deficit; s.totCal+=tt.calIn; s.totP+=tt.protein; s.totC+=tt.carbs; s.totF+=tt.fat;
+    if(tt.protein>=pTgt) s.protHits++;
+    if(tt.deficit>s.best) s.best=tt.deficit;
+    if(hitTargetDay(tt)) s.macroHits++;
+  });
+  return s;
+}
+function hitTargetDay(tt){
+  var mc=+settings.maintCal||2500;
+  return tt.protein>=(+settings.maintProtein||190)*0.9 && Math.abs(tt.calIn-mc)<=mc*0.15;
+}
+function last7avg(){
+  var t=new Date();t.setHours(0,0,0,0); var n=0,cal=0,p=0;
+  for(var i=0;i<7;i++){var dk=key(new Date(t-i*86400000)),d=days[dk];
+    if(d&&isLogged(d)){var tt=dTotals(d);n++;cal+=tt.calIn;p+=tt.protein;}}
+  return {n:n,cal:n?cal/n:0,protein:n?p/n:0};
+}
+function setStatGrid(cells){
+  var g=$("statGrid"); g.innerHTML="";
+  cells.forEach(function(c){
+    var el=document.createElement("div"); el.className="stat";
+    el.innerHTML='<div class="v'+(c.cls?" "+c.cls:"")+'">'+c.v+'</div><div class="k">'+c.k+'</div>';
+    g.appendChild(el);
+  });
+}
 function renderTrends(){
+  $("appTitle").textContent=settings.mode==="maintain"?"Maintenance Mode":"Cut Mode";
+  var maint=settings.mode==="maintain";
   var est=estWeightNow(), wi=latestWeighIn();
   $("gCur").innerHTML=(Math.round(est*10)/10)+'<small> lbs est.</small>';
   $("gEst").textContent=wi?("Last weigh-in: "+wi.w+" lbs on "+parseKey(wi.k).toLocaleDateString(undefined,{month:"short",day:"numeric"})):"";
-  var lost=settings.startWeight-est, toGo=est-settings.goalWeight;
-  $("gMeta").innerHTML="<b>"+(Math.round(lost*10)/10)+"</b> lbs lost<br><b>"+(Math.round(toGo*10)/10)+"</b> lbs to goal<br>by <b>"+
-    parseKey(settings.goalDate).toLocaleDateString(undefined,{month:"short",day:"numeric"})+"</b>";
-  var span=settings.startWeight-settings.goalWeight;
-  var prog=span>0?Math.min(100,Math.max(0,(settings.startWeight-est)/span*100)):0;
-  $("gBar").style.width=prog+"%";
-  $("gStart").textContent=settings.startWeight+" start";
-  $("gGoal").textContent=settings.goalWeight+" goal";
 
-  // weigh-in input (prefill today's) + recent weigh-in history
+  // weigh-in input + history (both modes)
   var tday=days[todayKey()];
   $("wiInput").value=(tday&&tday.weight!=null)?tday.weight:"";
   var wkeys=allKeysSorted().filter(function(k){return days[k].weight!=null;}).reverse().slice(0,6);
@@ -667,47 +790,66 @@ function renderTrends(){
     ? "Recent weigh-ins: "+wkeys.map(function(k){return parseKey(k).toLocaleDateString(undefined,{month:"short",day:"numeric"})+" <b>"+days[k].weight+"</b>";}).join("  ·  ")
     : "No weigh-ins logged yet — add one above to set your current weight.";
 
-  // this week (last 7 days incl today)
-  var wkDef=0, t=new Date();t.setHours(0,0,0,0);
-  for(var i=0;i<7;i++){var dk=key(new Date(t-i*86400000));if(days[dk]&&isLogged(days[dk]))wkDef+=dTotals(days[dk]).deficit;}
-  $("wkDef").textContent=fmtNum(wkDef)+" cal";
-  $("wkBar").style.width=Math.min(100,Math.max(0,wkDef/3500*100))+"%";
-  var wkGo=3500-wkDef;
-  $("wkHint").textContent= wkGo<=0 ? "✓ Beat the 3,500 cal weekly target (~1 lb)." : fmtNum(wkGo)+" cal to go for the 3,500 weekly target.";
+  var phaseStart=settings.seasonStart||settings.startDate;
+  var ps=phaseStats(phaseStart, todayKey());
 
-  // all-time stats
-  var keys=allKeysSorted(), active=0, cum=0, protHits=0, best=-1e9, logged=0;
-  keys.forEach(function(k){
-    var d=days[k];
-    if(d.maintenance){logged++;return;}
-    if(!isLogged(d)) return;
-    logged++; active++;
-    var tt=dTotals(d); cum+=tt.deficit;
-    if(tt.protein>=settings.proteinTarget) protHits++;
-    if(tt.deficit>best) best=tt.deficit;
-  });
-  $("stLost").textContent=Math.round(lost*10)/10;
-  $("stLost").className="v good";
-  $("stToGo").textContent=Math.round(toGo*10)/10;
-  $("stCum").textContent=fmtNum(cum);
-  $("stAvg").textContent=active?fmtNum(cum/active):0;
-  $("stDays").textContent=logged;
-  $("stProtein").textContent=protHits;
-  $("stBest").textContent=fmtNum(best<-1e8?0:best);
+  if(!maint){
+    $("goalProgress").classList.remove("hidden");
+    var lost=settings.startWeight-est, toGo=est-settings.goalWeight;
+    $("gMeta").innerHTML="<b>"+(Math.round(lost*10)/10)+"</b> lbs lost<br><b>"+(Math.round(toGo*10)/10)+"</b> lbs to goal<br>by <b>"+
+      parseKey(settings.goalDate).toLocaleDateString(undefined,{month:"short",day:"numeric"})+"</b>";
+    var span=settings.startWeight-settings.goalWeight;
+    var prog=span>0?Math.min(100,Math.max(0,(settings.startWeight-est)/span*100)):0;
+    $("gBar").style.width=prog+"%";
+    $("gStart").textContent=settings.startWeight+" start"; $("gGoal").textContent=settings.goalWeight+" goal";
 
-  // projection from last-7-day pace
-  var dailyPace=wkDef/7; // cal/day avg this week
-  var projEl=$("stProj");
-  if(dailyPace>0 && toGo>0){
-    var daysNeed=(toGo*settings.calPerLb)/dailyPace;
-    var proj=new Date(t.getTime()+daysNeed*86400000);
-    projEl.textContent=proj.toLocaleDateString(undefined,{month:"short",day:"numeric"});
-    projEl.className="v "+(proj<=parseKey(settings.goalDate)?"good":"warn");
-  } else if(toGo<=0){ projEl.textContent="Done 🎉"; projEl.className="v good"; }
-  else { projEl.textContent="—"; projEl.className="v"; }
+    var wkDef=0,t=new Date();t.setHours(0,0,0,0);
+    for(var i=0;i<7;i++){var dk=key(new Date(t-i*86400000));if(days[dk]&&isLogged(days[dk]))wkDef+=dTotals(days[dk]).deficit;}
+    $("wkLabel").textContent="Deficit so far";
+    $("wkDef").textContent=fmtNum(wkDef)+" cal";
+    $("wkBar").style.width=Math.min(100,Math.max(0,wkDef/3500*100))+"%";
+    var wkGo=3500-wkDef;
+    $("wkHint").textContent= wkGo<=0 ? "✓ Beat the 3,500 cal weekly target (~1 lb)." : fmtNum(wkGo)+" cal to go for the 3,500 weekly target.";
+
+    $("statsTitle").textContent="This Cut";
+    var projTxt="—",projCls="",dailyPace=wkDef/7;
+    if(dailyPace>0 && toGo>0){var daysNeed=(toGo*settings.calPerLb)/dailyPace;var proj=new Date(t.getTime()+daysNeed*86400000);
+      projTxt=proj.toLocaleDateString(undefined,{month:"short",day:"numeric"});projCls=proj<=parseKey(settings.goalDate)?"good":"warn";}
+    else if(toGo<=0){projTxt="Done 🎉";projCls="good";}
+    setStatGrid([
+      {v:Math.round(lost*10)/10,k:"lbs lost (est)",cls:"good"},
+      {v:Math.round(toGo*10)/10,k:"lbs to goal"},
+      {v:fmtNum(ps.totDef),k:"total deficit (cal)"},
+      {v:ps.activeDays?fmtNum(ps.totDef/ps.activeDays):0,k:"avg deficit / active day"},
+      {v:ps.days,k:"days logged"},
+      {v:ps.protHits,k:"protein-target days (≥"+settings.proteinTarget+")"},
+      {v:fmtNum(ps.best<-1e8?0:ps.best),k:"best single-day deficit"},
+      {v:projTxt,k:"projected to hit goal",cls:projCls}
+    ]);
+  } else {
+    $("goalProgress").classList.add("hidden");
+    $("gMeta").innerHTML="🔄 <b>Maintenance</b><br>"+ps.days+" days in phase<br>building &amp; staying lean";
+    var a7=last7avg(), mProt=+settings.maintProtein||190;
+    $("wkLabel").textContent="Avg calories / day (7d)";
+    $("wkDef").textContent=fmtNum(a7.cal)+" cal";
+    $("wkBar").style.width=Math.min(100,a7.protein/mProt*100)+"%";
+    $("wkHint").textContent="Avg protein "+Math.round(a7.protein)+"g/day (target "+mProt+"g). Eat clean on weekdays, enjoy weekend treats — it's the weekly average that counts.";
+    $("statsTitle").textContent="This Phase";
+    setStatGrid([
+      {v:Math.round(est*10)/10,k:"current weight (lbs)"},
+      {v:fmtNum(ps.days?ps.totCal/ps.days:0),k:"avg calories / day"},
+      {v:Math.round(ps.days?ps.totP/ps.days:0)+"g",k:"avg protein / day"},
+      {v:Math.round(ps.days?ps.totC/ps.days:0)+"g",k:"avg carbs / day"},
+      {v:Math.round(ps.days?ps.totF/ps.days:0)+"g",k:"avg fat / day"},
+      {v:ps.protHits,k:"protein-target days (≥"+mProt+")",cls:"good"},
+      {v:ps.macroHits,k:"on-target days"},
+      {v:ps.days,k:"days logged"}
+    ]);
+  }
 
   // recent list (last 14, newest first)
   var box=$("recentList");box.innerHTML="";
+  var keys=allKeysSorted();
   var recent=keys.filter(function(k){var d=days[k];return d.maintenance||isLogged(d)||d.weight!=null;}).slice(-14).reverse();
   recent.forEach(function(k){
     var d=days[k], tt=dTotals(d), row=document.createElement("div");
@@ -717,6 +859,12 @@ function renderTrends(){
       row.innerHTML='<div class="dd">'+label+'</div><div class="ddef" style="color:var(--warn)">Maintenance</div><div class="dp"></div><div class="db"></div>';
     }else if(!isLogged(d)){
       row.innerHTML='<div class="dd">'+label+'</div><div class="ddef" style="color:var(--accent2);font-weight:600">⚖ '+(d.weight!=null?d.weight+' lbs':'—')+'</div><div class="dp"></div><div class="db"></div>';
+    }else if(maint){
+      var ok=hitTargetDay(tt);
+      row.innerHTML='<div class="dd">'+label+'</div>'+
+        '<div class="ddef" style="color:'+(ok?"var(--good)":"var(--txt)")+'">'+fmtNum(tt.calIn)+'<span style="font-size:11px;color:var(--muted)"> cal</span></div>'+
+        '<div class="dp">'+Math.round(tt.protein)+'g P</div>'+
+        '<div class="db" style="color:var(--muted)">C'+Math.round(tt.carbs)+' F'+Math.round(tt.fat)+'</div>';
     }else{
       var col=tt.deficit>=settings.deficitTarget?"var(--good)":(tt.deficit>=0?"var(--txt)":"var(--bad)");
       row.innerHTML='<div class="dd">'+label+'</div>'+
@@ -731,14 +879,86 @@ function renderTrends(){
 
 /* ---------- render SETTINGS ---------- */
 function renderSettings(){
+  $("appTitle").textContent=settings.mode==="maintain"?"Maintenance Mode":"Cut Mode";
   $("setName").value=settings.name; $("setAge").value=settings.age; $("setHeight").value=settings.height;
   $("setStartW").value=settings.startWeight; $("setGoalW").value=settings.goalWeight;
   $("setStartD").value=settings.startDate; $("setGoalD").value=settings.goalDate;
   $("setTdee").value=settings.tdee; $("setDefTgt").value=settings.deficitTarget;
   $("setProt").value=settings.proteinTarget; $("setCpp").value=settings.calPerLb;
+  $("setMCal").value=settings.maintCal; $("setMP").value=settings.maintProtein;
+  $("setMC").value=settings.maintCarb; $("setMF").value=settings.maintFat;
+  $("modeCut").classList.toggle("on", settings.mode!=="maintain");
+  $("modeMaint").classList.toggle("on", settings.mode==="maintain");
+  $("seasonStartInp").value=settings.seasonStart||settings.startDate;
   $("setApiKey").value=settings.apiKey||""; $("setModel").value=settings.aiModel||"claude-opus-4-8";
   $("relayId").value=settings.relayId||"";
   $("relayUrl").value=settings.relayId?relayEndpoint():"(save your Relay ID first)";
+  renderSeasons();
+}
+function weighInOnOrBefore(k){
+  var keys=allKeysSorted(), res=null;
+  keys.forEach(function(kk){ if(kk<=k && days[kk].weight!=null) res=days[kk].weight; });
+  return res;
+}
+function buildSeasonSnapshot(name,mode,start,end){
+  var savedMode=settings.mode; settings.mode=mode;          // phaseStats uses current mode for protein target
+  var s=phaseStats(start,end); settings.mode=savedMode;
+  var startW=weighInOnOrBefore(start); if(startW==null) startW=settings.startWeight;
+  var endW=weighInOnOrBefore(end);
+  return {name:name,mode:mode,start:start,end:end,days:s.days,
+    totDef:Math.round(s.totDef), avgDef:s.activeDays?Math.round(s.totDef/s.activeDays):0,
+    protHits:s.protHits, best:s.best<-1e8?0:Math.round(s.best), macroHits:s.macroHits,
+    avgCal:s.days?Math.round(s.totCal/s.days):0, avgP:s.days?Math.round(s.totP/s.days):0,
+    avgC:s.days?Math.round(s.totC/s.days):0, avgF:s.days?Math.round(s.totF/s.days):0,
+    startW:startW, endW:(endW==null?null:endW), calPerLb:settings.calPerLb};
+}
+function renderSeasons(){
+  var box=$("seasonList"); if(!box) return;
+  var list=settings.seasons||[];
+  if(!list.length){box.innerHTML='<div class="hint" style="padding:0 4px">No archived phases yet. Tap “End &amp; archive this phase” above to save your first snapshot here.</div>';return;}
+  box.innerHTML="";
+  list.slice().reverse().forEach(function(s,idx){
+    var realIdx=list.length-1-idx;
+    var card=document.createElement("div"); card.className="card tight season";
+    var range=parseKey(s.start).toLocaleDateString(undefined,{month:"short",day:"numeric"})+" – "+
+      parseKey(s.end).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+    var wchg=(s.startW!=null&&s.endW!=null)?(Math.round((s.endW-s.startW)*10)/10):null;
+    var head=(s.mode==="maintain"?"🔄 ":"🔻 ")+s.name;
+    var sub=range+" · "+s.days+" days"+(wchg!=null?(" · "+(wchg>0?"+":"")+wchg+" lbs"):"");
+    var detail;
+    if(s.mode==="maintain"){
+      detail="Avg <b>"+fmtNum(s.avgCal)+"</b> cal · <b>"+s.avgP+"g</b> P · "+s.avgC+"g C · "+s.avgF+"g F per day<br>"+
+        s.macroHits+" on-target days · "+s.protHits+" protein-target days"+
+        (s.startW!=null?("<br>Weight: <b>"+s.startW+" → "+(s.endW!=null?s.endW:"?")+" lbs</b>"):"");
+    }else{
+      detail="Total deficit <b>"+fmtNum(s.totDef)+"</b> cal (~"+(Math.round(s.totDef/(s.calPerLb||3500)*10)/10)+" lbs)<br>"+
+        "Avg <b>"+fmtNum(s.avgDef)+"</b>/active day · best "+fmtNum(s.best)+" · "+s.protHits+" protein-target days"+
+        (s.startW!=null?("<br>Weight: <b>"+s.startW+" → "+(s.endW!=null?s.endW:"?")+" lbs</b>"):"");
+    }
+    card.innerHTML='<div style="font-weight:700;font-size:15px">'+head+'</div>'+
+      '<div class="hint" style="margin-top:3px">'+sub+'</div>'+
+      '<div class="hint sdetail hidden" style="margin-top:8px;line-height:1.7">'+detail+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:10px">'+
+        '<button class="btn sview" style="margin-top:0">View details</button>'+
+        '<button class="btn danger sdel" style="margin-top:0;width:auto;flex:0 0 auto;padding:13px 16px">✕</button></div>';
+    card.querySelector(".sview").addEventListener("click",function(){
+      var dd=card.querySelector(".sdetail"); dd.classList.toggle("hidden");
+      this.textContent=dd.classList.contains("hidden")?"View details":"Hide details";
+    });
+    card.querySelector(".sdel").addEventListener("click",function(){
+      if(window.confirm("Delete this archived phase? (your daily logs stay; only the saved snapshot is removed)")){
+        settings.seasons.splice(realIdx,1); save(K_SET,settings); renderSeasons();
+      }
+    });
+    box.appendChild(card);
+  });
+}
+function setMode(m){
+  settings.mode=m; save(K_SET,settings);
+  $("modeCut").classList.toggle("on", m!=="maintain");
+  $("modeMaint").classList.toggle("on", m==="maintain");
+  $("appTitle").textContent=m==="maintain"?"Maintenance Mode":"Cut Mode";
+  toast(m==="maintain"?"Switched to Maintenance mode 🔄":"Switched to Cut mode 🔻");
 }
 
 /* ---------- views ---------- */
@@ -778,14 +998,14 @@ function buildQuick(elId,lib,onPick){
 }
 // Food sheet
 $("addFood").addEventListener("click",function(){
-  $("fNm").value="";$("fCal").value="";$("fP").value="";
-  buildQuick("foodQuick",FOOD_LIB,function(it){$("fNm").value=it[0];$("fCal").value=it[1];$("fP").value=it[2];});
+  $("fNm").value="";$("fCal").value="";$("fP").value="";$("fC").value="";$("fF").value="";
+  buildQuick("foodQuick",FOOD_LIB,function(it){$("fNm").value=it[0];$("fCal").value=it[1];$("fP").value=it[2];$("fC").value=it[3]||"";$("fF").value=it[4]||"";});
   openSheet("foodSheet");setTimeout(function(){$("fNm").focus();},100);
 });
 $("fCancel").addEventListener("click",function(){closeSheet("foodSheet");});
 $("fSave").addEventListener("click",function(){
   var d=getDay(key(viewDate));
-  d.foods.push({n:($("fNm").value.trim()||"Food"),cal:+$("fCal").value||0,p:+$("fP").value||0});
+  d.foods.push({n:($("fNm").value.trim()||"Food"),cal:+$("fCal").value||0,p:+$("fP").value||0,c:+$("fC").value||0,f:+$("fF").value||0});
   d.maintenance=false; save(K_DAYS,days);closeSheet("foodSheet");renderToday();
 });
 // Burn sheet
@@ -832,6 +1052,28 @@ $("saveSettings").addEventListener("click",function(){
   settings.proteinTarget=+$("setProt").value||0; settings.calPerLb=+$("setCpp").value||3500;
   save(K_SET,settings);flash($("saveSettings"),"Saved ✓");
 });
+$("saveMaint").addEventListener("click",function(){
+  settings.maintCal=+$("setMCal").value||settings.maintCal;
+  settings.maintProtein=+$("setMP").value||settings.maintProtein;
+  settings.maintCarb=+$("setMC").value||settings.maintCarb;
+  settings.maintFat=+$("setMF").value||settings.maintFat;
+  save(K_SET,settings);flash($("saveMaint"),"Saved ✓");
+});
+$("modeCut").addEventListener("click",function(){setMode("cut");});
+$("modeMaint").addEventListener("click",function(){setMode("maintain");});
+$("seasonStartInp").addEventListener("change",function(){settings.seasonStart=this.value||settings.seasonStart;save(K_SET,settings);});
+$("endSeason").addEventListener("click",function(){
+  var label=parseKey(settings.seasonStart||settings.startDate).toLocaleDateString(undefined,{month:"short",year:"numeric"})+
+    " – "+new Date().toLocaleDateString(undefined,{month:"short",year:"numeric"});
+  var defName=(settings.mode==="maintain"?"Maintenance":"Cut")+" · "+label;
+  var name=window.prompt("Name this phase to save to Past Seasons:", defName);
+  if(name===null) return;
+  var snap=buildSeasonSnapshot(name.trim()||defName, settings.mode, settings.seasonStart||settings.startDate, todayKey());
+  settings.seasons=settings.seasons||[]; settings.seasons.push(snap);
+  settings.seasonStart=todayKey();
+  save(K_SET,settings); renderSettings();
+  toast("✓ Phase archived to Past Seasons. New phase started today.");
+});
 $("saveAi").addEventListener("click",function(){
   settings.apiKey=$("setApiKey").value.trim();
   settings.aiModel=$("setModel").value;
@@ -875,15 +1117,18 @@ function toast(msg){
   clearTimeout(toastEl._t);toastEl._t=setTimeout(function(){toastEl.classList.remove("show");},3600);
 }
 function aiSystem(){
-  var foodLib=FOOD_LIB.map(function(f){return "- "+f[0]+": "+f[1]+" cal, "+f[2]+"g protein";}).join("\n");
+  var foodLib=FOOD_LIB.map(function(f){return "- "+f[0]+": "+f[1]+" cal, "+f[2]+"g P, "+(f[3]||0)+"g C, "+(f[4]||0)+"g F";}).join("\n");
   var burnLib=BURN_LIB.map(function(b){return "- "+b[0]+": ~"+b[1]+" cal";}).join("\n");
   var wt=Math.round(estWeightNow()*10)/10;
-  return "You are a fast logging assistant for Cody, who is eating at a calorie deficit to lose weight. "+
+  var phase=settings.mode==="maintain"
+    ? "MAINTENANCE — eating around maintenance calories to build muscle and stay lean (targets ~"+settings.maintCal+" cal, "+settings.maintProtein+"g protein, "+settings.maintCarb+"g carbs, "+settings.maintFat+"g fat per day; weekend treats are fine)"
+    : "a CUT — eating at a calorie deficit to lose weight";
+  return "You are a fast logging assistant for Cody, who is currently in "+phase+". "+
     "His stats: "+(settings.height||"6'3\"")+", "+(settings.age||38)+" years old, about "+wt+" lbs. "+
     "He describes, in plain language, FOOD he ate, a WORKOUT / activity he did, or both in one message. "+
     "Split it into two lists.\n\n"+
-    "FOODS — one entry per distinct food or drink, with realistic calories and protein (grams), scaled to the stated quantity "+
-    "(e.g. \"3 chicken fillets\" = 3x a chicken breast). Round calories to the nearest 5 and protein to the nearest gram. "+
+    "FOODS — one entry per distinct food or drink, with realistic calories, protein, carbs, and fat (all in grams), scaled to the stated quantity "+
+    "(e.g. \"3 chicken fillets\" = 3x a chicken breast). Round calories to the nearest 5 and macros to the nearest gram. "+
     "If a photo is provided, identify each food/drink in it and estimate portions.\n\n"+
     "WORKOUTS — one entry per distinct activity, with the ACTIVE CALORIES BURNED. "+
     "If he gives a burn number (e.g. \"burned 600\", \"watch said 540\"), use it exactly. Otherwise estimate the burn from his "+
@@ -900,8 +1145,8 @@ function setAiBusy(b){
 }
 function aiSchema(){
   return {type:"object",additionalProperties:false,required:["foods","workouts"],properties:{
-    foods:{type:"array",items:{type:"object",additionalProperties:false,required:["name","calories","protein"],
-      properties:{name:{type:"string"},calories:{type:"integer"},protein:{type:"number"}}}},
+    foods:{type:"array",items:{type:"object",additionalProperties:false,required:["name","calories","protein","carbs","fat"],
+      properties:{name:{type:"string"},calories:{type:"integer"},protein:{type:"number"},carbs:{type:"number"},fat:{type:"number"}}}},
     workouts:{type:"array",items:{type:"object",additionalProperties:false,required:["name","calories"],
       properties:{name:{type:"string"},calories:{type:"integer"}}}}}};
 }
@@ -946,8 +1191,8 @@ function runClaudeLog(userContent, onSuccess){
      var data=JSON.parse(txt), foods=data.foods||[], workouts=data.workouts||[];
      if(!foods.length && !workouts.length){toast("Didn't catch any food or workout — try again.");return;}
      var d=getDay(key(viewDate)), fc=0, fp=0, bc=0;
-     foods.forEach(function(it){var cal=Math.round(it.calories||0), p=Math.round(it.protein||0);
-       d.foods.push({n:it.name||"Food",cal:cal,p:p}); fc+=cal; fp+=p;});
+     foods.forEach(function(it){var cal=Math.round(it.calories||0), p=Math.round(it.protein||0), c=Math.round(it.carbs||0), f=Math.round(it.fat||0);
+       d.foods.push({n:it.name||"Food",cal:cal,p:p,c:c,f:f}); fc+=cal; fp+=p;});
      workouts.forEach(function(w){var cal=Math.round(w.calories||0);
        d.workouts.push({n:w.name||"Activity",cal:cal}); bc+=cal;});
      d.maintenance=false; save(K_DAYS,days);
