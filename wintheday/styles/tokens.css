@@ -1,0 +1,106 @@
+/* ============================================================
+   WIN THE DAY — design tokens
+   Single source of truth. No literal colors below this file.
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* ── Ink ─────────────────────────────────────────────── */
+  --ink:        #0C1116;
+  --ink-90:     rgba(12, 17, 22, .90);
+  --ink-70:     rgba(12, 17, 22, .70);
+  --ink-55:     rgba(12, 17, 22, .55);
+  --ink-38:     rgba(12, 17, 22, .38);
+  --ink-22:     rgba(12, 17, 22, .22);
+  --ink-12:     rgba(12, 17, 22, .12);
+  --ink-06:     rgba(12, 17, 22, .06);
+
+  /* ── Brand ───────────────────────────────────────────── */
+  --first-light: #FDFDFF;
+  --sunrise:     #FFB43D;
+  --sunrise-hot: #FF9A16;
+  --sunrise-pale:#FFD79A;
+  --peach:       #FFE3C4;
+  --peach-deep:  #FFCFA0;
+  --go:          #00C48C;
+  --go-deep:     #00A175;
+  --dusk:        #171B3A;
+  --dusk-lift:   #262B57;
+  --dusk-glow:   #5A5EA8;
+
+  /* ── Semantic surfaces (swapped wholesale by mood) ───── */
+  --surface:        var(--first-light);
+  --surface-raised: rgba(255, 255, 255, .70);
+  --surface-sunk:   rgba(12, 17, 22, .045);
+  --text:           var(--ink);
+  --text-soft:      var(--ink-55);
+  --text-faint:     var(--ink-38);
+  --hairline:       rgba(12, 17, 22, .085);
+  --text-pending:   #C29A6B;
+
+  /* ── Sky — written live by src/ui/dayArc.js ──────────── */
+  --sky-1: #FFF4E6;
+  --sky-2: #FFE3C4;
+  --sky-3: #FFC479;
+  --ground: #FFF7EE;
+  --sun-core: #FFF8EC;
+  --sun-mid:  #FFB43D;
+  --sun-edge: #FF9A16;
+  --sun-heat: .35;          /* 0..1 — driven by completion */
+  --bloom:    255, 172, 48; /* the colour the sun throws on the page */
+  --sun-x:    50%;
+  --sun-y:    34%;
+
+  /* ── Type: three roles, deliberate contrast ──────────── */
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body:    "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-num:     "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --t-hero:  clamp(2.85rem, 13.2vw, 4.6rem);
+  --t-title: clamp(1.4rem, 5.4vw, 1.85rem);
+  --t-lede:  clamp(1.02rem, 4.15vw, 1.2rem);
+  --t-body:  .975rem;
+  --t-small: .84rem;
+  --t-label: .69rem;
+  --t-num:   1.55rem;
+
+  /* ── Space / radius / elevation ──────────────────────── */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 22px; --sp-6: 30px; --sp-7: 42px; --sp-8: 60px;
+
+  --r-sm: 12px; --r-md: 18px; --r-lg: 26px; --r-pill: 999px;
+
+  --shadow-lift: 0 1px 2px rgba(12,17,22,.04), 0 10px 30px -14px rgba(12,17,22,.20);
+  --shadow-sun:  0 12px 44px -14px rgba(255,154,22,.55);
+
+  --gutter: clamp(20px, 6vw, 30px);
+  --measure: 560px;
+
+  /* ── Motion ──────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --dur-fast: 180ms;
+  --dur-mid:  440ms;
+  --dur-slow: 900ms;
+  --dur-sky:  1600ms;
+}
+
+/* ── Dusk: the night close. Same app, third mood. ─────── */
+[data-mood="night"] {
+  color-scheme: dark;
+  --surface:        var(--dusk);
+  --surface-raised: rgba(255, 255, 255, .055);
+  --surface-sunk:   rgba(0, 0, 0, .20);
+  --text:           #F3F2FB;
+  --text-soft:      rgba(243, 242, 251, .60);
+  --text-faint:     rgba(243, 242, 251, .38);
+  --hairline:       rgba(255, 255, 255, .10);
+  --ground:         var(--dusk);
+  --text-pending:   rgba(243, 242, 251, .34);
+  --shadow-lift:    0 1px 2px rgba(0,0,0,.30), 0 12px 34px -14px rgba(0,0,0,.65);
+  --sun-core:       #C9C6F5;
+  --sun-mid:        var(--dusk-glow);
+  --sun-edge:       #3B3F7C;
+  --bloom:          96, 100, 178;
+}

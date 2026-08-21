@@ -1,3 +1,7 @@
+> **This repo now holds two apps.**
+> - **Macros** (below) — the fitness tracker, at the repo root, unchanged, still on GitHub Pages.
+> - **[Win The Day](wintheday/README.md)** — a daily operating system, in `wintheday/`, deployed on Vercel.
+
 # Macros 🍎
 
 A simple fitness & macros tracker that lives **entirely on your phone**. No

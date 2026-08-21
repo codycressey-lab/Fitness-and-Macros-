@@ -1,0 +1,100 @@
+/* ============================================================
+   THE DAY ARC — the signature element.
+   A sun travels a curve. Its position is the time of day; the
+   lit portion of the curve behind it is the day you've spent;
+   the beads on it are the things you've actually done, each
+   sitting at the hour you did it.
+   ============================================================ */
+
+.arc {
+  position: relative;
+  width: calc(100% + var(--gutter) * 2);
+  margin-left: calc(var(--gutter) * -1);
+  margin-top: calc(var(--sp-1) * -1);
+  display: block;
+  animation: fade var(--dur-slow) var(--ease-out) both;
+}
+
+.arc svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* The unspent part of the day — present, but quiet. */
+.arc-track {
+  fill: none;
+  stroke: var(--ink-22);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: .1 5.5;
+  opacity: .7;
+}
+[data-mood="night"] .arc-track { stroke: rgba(255, 255, 255, .14); }
+
+/* The part you've already travelled. Draws itself on load. */
+.arc-lit {
+  fill: none;
+  stroke: url(#arcLitGrad);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--dur-slow) var(--ease-out);
+}
+
+/* Sun */
+.sun-glow {
+  fill: url(#sunGlowGrad);
+  opacity: calc(.32 + .68 * var(--sun-heat));
+  transition: opacity var(--dur-sky) var(--ease-out);
+}
+.sun-body { fill: url(#sunBodyGrad); }
+.sun-rim  { fill: none; stroke: var(--sun-core); stroke-width: .9; opacity: .55; }
+
+.sun-group {
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+/* Beads — one per completed item, parked at its true hour. */
+.bead {
+  fill: var(--go);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: beadPop 520ms var(--ease-spring) both;
+}
+.bead-halo { fill: var(--go); opacity: .16; }
+
+@keyframes beadPop {
+  from { transform: scale(0); }
+  60%  { transform: scale(1.28); }
+  to   { transform: scale(1); }
+}
+
+/* The time chip rides under the sun. The arc is the clock; this
+   just says it out loud. */
+.arc-now {
+  position: absolute;
+  transform: translate(-50%, 0);
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: .68rem;
+  font-weight: 500;
+  letter-spacing: .04em;
+  color: var(--ink-55);
+  background: rgba(255, 255, 255, .58);
+  border: 1px solid var(--hairline);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fade var(--dur-slow) var(--ease-out) 700ms both;
+}
+[data-mood="night"] .arc-now {
+  color: var(--text-soft);
+  background: rgba(255, 255, 255, .07);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bead { animation: none; }
+}

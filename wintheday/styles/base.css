@@ -1,0 +1,179 @@
+/* ============================================================
+   WIN THE DAY — reset, fonts, page shell, motion primitives
+   ============================================================ */
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("../fonts/bricolage-400-800.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Figtree";
+  src: url("../fonts/figtree-400-800.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "DM Mono";
+  src: url("../fonts/dmmono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "DM Mono";
+  src: url("../fonts/dmmono-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+* { -webkit-tap-highlight-color: transparent; }
+
+html, body { margin: 0; padding: 0; }
+
+html {
+  /* Paint the sky behind the safe areas too, so the notch matches. */
+  background: var(--sky-1);
+  transition: background var(--dur-sky) var(--ease-out);
+}
+
+body {
+  min-height: 100dvh;
+  font-family: var(--font-body);
+  font-size: var(--t-body);
+  line-height: 1.5;
+  color: var(--text);
+  /* The sky is the only background. The body must not cover it. */
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* ── The sky ──────────────────────────────────────────────
+   Three stacked layers, all driven by custom properties:
+   1. the vertical gradient (time of day)
+   2. a radial bloom anchored to the sun (completion heat)
+   3. the page surface fading in below the fold
+   ------------------------------------------------------- */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    /* the sun's own bloom — this is the completion heat */
+    radial-gradient(
+      86% 46% at var(--sun-x) var(--sun-y),
+      rgba(var(--bloom), calc(.05 + .24 * var(--sun-heat))) 0%,
+      rgba(var(--bloom), 0) 70%
+    ),
+    /* the sky itself: horizon lands at the base of the arc, then the
+       ground takes over — warm cream at dawn, cool white at noon,
+       indigo at night. The page never sits on flat white. */
+    linear-gradient(
+      to bottom,
+      var(--sky-1) 0%,
+      var(--sky-2) 11%,
+      var(--sky-3) 22%,
+      var(--ground) 46%,
+      var(--ground) 100%
+    );
+  transition: background var(--dur-sky) var(--ease-out);
+}
+
+.shell {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding:
+    calc(env(safe-area-inset-top) + var(--sp-4))
+    var(--gutter)
+    calc(env(safe-area-inset-bottom) + var(--sp-8));
+}
+
+/* ── Type primitives ─────────────────────────────────── */
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -.028em;
+  line-height: .96;
+  font-variation-settings: "opsz" 48;
+}
+
+.label {
+  font-family: var(--font-num);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ── Focus: visible, warm, never a browser-blue box ──── */
+:focus-visible {
+  outline: 2px solid var(--sunrise-hot);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+
+/* ── Entrance choreography ────────────────────────────
+   One orchestrated sequence on load. Elements opt in with
+   .rise and stagger via --i. After that: restraint.
+   --------------------------------------------------- */
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.rise {
+  opacity: 0;
+  animation: rise var(--dur-mid) var(--ease-out) forwards;
+  animation-delay: calc(var(--i, 0) * 85ms + 120ms);
+}
+
+.shimmer {
+  background: linear-gradient(
+    100deg,
+    var(--ink-06) 20%,
+    var(--ink-12) 42%,
+    var(--ink-06) 64%
+  );
+  background-size: 260% 100%;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: var(--r-pill);
+}
+@keyframes shimmer {
+  from { background-position: 160% 0; }
+  to   { background-position: -60% 0; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── Reduced motion: keep the meaning, drop the movement ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .rise { opacity: 1; }
+}
