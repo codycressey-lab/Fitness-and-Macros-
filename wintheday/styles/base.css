@@ -6,6 +6,9 @@
   font-family: "Bricolage Grotesque";
   src: url("../fonts/bricolage-400-800.woff2") format("woff2");
   font-weight: 400 800;
+  /* Bricolage carries a wdth axis. Without this the browser picks the
+     axis default (75) and the whole app renders condensed. */
+  font-stretch: 100%;
   font-display: swap;
 }
 @font-face {
