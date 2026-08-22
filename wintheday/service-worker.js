@@ -10,7 +10,6 @@ const CACHE = "wintheday-v1";
 
 const ASSETS = [
   "./",
-  "index.html",
   "manifest.json",
   "styles/tokens.css",
   "styles/base.css",
