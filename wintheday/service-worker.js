@@ -3,7 +3,8 @@
  * instantly with no signal; network-first is never needed here because
  * every asset is versioned by the cache name below.
  *
- * Bump CACHE on every deploy that changes an asset.
+ * App code updates itself on the next open with signal (network-first),
+ * so there is no need to bump CACHE for ordinary deploys.
  */
 const CACHE = "wintheday-v1";
 
@@ -47,25 +48,44 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
+/**
+ * Fonts and icons never change without a new filename, so they're served
+ * cache-first. App code is served network-first with a cache fallback, so
+ * a deploy lands on your phone the next time you open it with signal —
+ * and the app still works with none.
+ */
+const IMMUTABLE = /\/(fonts|icons)\//;
+
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  // The coach endpoint is never cached — a stale encouragement line
-  // would be worse than none, and coach.js already handles failure.
+  // The coach endpoint is never cached — a stale encouragement line would
+  // be worse than none, and coach.js already handles failure.
   if (e.request.method !== "GET" || url.pathname.startsWith("/api/")) return;
+  if (url.origin !== self.location.origin) return;
+
+  if (IMMUTABLE.test(url.pathname)) {
+    e.respondWith(
+      caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
+        return res;
+      }))
+    );
+    return;
+  }
 
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      const net = fetch(e.request)
-        .then((res) => {
-          if (res && res.status === 200 && res.type === "basic") {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || net;
-    })
+    fetch(e.request)
+      .then((res) => {
+        if (res && res.status === 200 && res.type === "basic") {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request).then((hit) => hit || caches.match("index.html")))
   );
 });

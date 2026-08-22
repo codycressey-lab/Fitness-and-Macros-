@@ -41,6 +41,12 @@ function write(key, value) {
 export const getSettings = () => read(K.settings, {});
 export const saveSettings = (patch) => write(K.settings, { ...getSettings(), ...patch });
 
+/* Boot computes streaks, weekly targets and month-to-date, which reads the
+   day store dozens of times. Parsing it on every read is the difference
+   between opening instantly and not, so cache it and drop the cache on
+   any write. */
+let daysCache = null;
+
 /* ── Day records ────────────────────────────────────────
    days[dayKey] = {
      items: { [itemId]: { done, at, value, criteria, entries } },
@@ -49,7 +55,10 @@ export const saveSettings = (patch) => write(K.settings, { ...getSettings(), ...
    `at` is an ISO timestamp — it's what puts a bead at the right
    hour on the Day Arc.
    ----------------------------------------------------- */
-export const getDays = () => read(K.days, {});
+export function getDays() {
+  if (daysCache === null) daysCache = read(K.days, {});
+  return daysCache;
+}
 
 export function getDay(key) {
   return getDays()[key] || { items: {}, skipped: [] };
@@ -67,6 +76,7 @@ export function setItem(key, itemId, patch) {
 
   day.items[itemId] = next;
   days[key] = day;
+  daysCache = days;
   write(K.days, days);
   return next;
 }
@@ -127,7 +137,7 @@ export function exportAll() {
 export function importAll(payload) {
   if (!payload || payload.app !== "win-the-day") throw new Error("Not a Win The Day export.");
   if (payload.settings) write(K.settings, payload.settings);
-  if (payload.days) write(K.days, payload.days);
+  if (payload.days) { write(K.days, payload.days); daysCache = null; }
   if (payload.journal) write(K.journal, payload.journal);
   return true;
 }

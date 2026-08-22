@@ -5,7 +5,7 @@
 import { DEFAULT_CONFIG, mergeConfig } from "./config/app.config.js";
 import { getSettings, getDay, recentJournal } from "./core/store.js";
 import {
-  dayKey, dayProgress, moodOf, formatClock, weekKeys, lastNDays, addDays,
+  dayKey, dayProgress, moodOf, formatClock, weekKeys, lastNDays, addDays, phaseOf,
 } from "./core/time.js";
 import {
   todayCompletion, beadsForDate, weeklyProgress, streak, completionHistory,
@@ -124,25 +124,54 @@ function paint(date) {
   });
 }
 
-const date = now();
+let date = now();
+let hero = null;
+
+/**
+ * Mount (or re-mount) the hero. The coach line is cached per day, so a
+ * re-render after a phase change costs nothing and never refetches.
+ */
+function mountHero(d) {
+  hero = renderHero(document.getElementById("hero"), {
+    config,
+    date: d,
+    stats: buildStats(d),
+  });
+
+  // The screen is already complete and readable at this point. The line
+  // arrives when it arrives.
+  morningLine(buildContext(d), config.api).then(({ text, source }) => {
+    hero.setLine(text, source);
+  });
+}
+
 paint(date);
+mountHero(date);
 
-const hero = renderHero(document.getElementById("hero"), {
-  config,
-  date,
-  stats: buildStats(date),
-});
+// Keep the sun honest without redrawing the world. The greeting only
+// re-renders when the phase or the date actually changes, so an app left
+// open through lunch stops saying "Good morning" — and one left open
+// overnight rolls onto the new day by itself.
+let lastPhase = phaseOf(date);
+let lastDay = dayKey(date);
 
-// The screen is already complete and readable at this point. The line
-// arrives when it arrives.
-morningLine(buildContext(date), config.api).then(({ text, source }) => {
-  hero.setLine(text, source);
-});
+function tick() {
+  const d = now();
+  paint(d);
 
-// Keep the sun honest without redrawing the world.
-setInterval(() => paint(now()), 30000);
+  const phase = phaseOf(d);
+  const key = dayKey(d);
+  if (phase !== lastPhase || key !== lastDay) {
+    lastPhase = phase;
+    lastDay = key;
+    date = d;
+    mountHero(d);
+  }
+}
+
+setInterval(tick, 30000);
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) paint(now());
+  if (!document.hidden) tick();
 });
 
 if ("serviceWorker" in navigator) {

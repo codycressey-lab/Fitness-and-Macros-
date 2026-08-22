@@ -29,13 +29,16 @@ const hits = new Map();
 
 function rateLimited(ip) {
   const now = Date.now();
+  // Bound the map before inserting, or a stream of unique IPs grows it
+  // without limit.
+  if (hits.size > 5000) hits.clear();
+
   const rec = hits.get(ip);
   if (!rec || now - rec.start > WINDOW_MS) {
     hits.set(ip, { start: now, n: 1 });
     return false;
   }
   rec.n += 1;
-  if (hits.size > 5000) hits.clear();
   return rec.n > MAX_PER_WINDOW;
 }
 
