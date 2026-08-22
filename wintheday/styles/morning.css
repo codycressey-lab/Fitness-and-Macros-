@@ -1,0 +1,153 @@
+/* ============================================================
+   SCREEN 1 — THE MORNING OPEN
+   ============================================================ */
+
+.hero { margin-top: var(--sp-3); }
+
+.hero-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.hero-meta .dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--sunrise);
+  align-self: center;
+  flex: 0 0 auto;
+}
+
+/* The hero of the whole app. Deliberately oversized. */
+.greeting {
+  font-family: var(--font-display);
+  font-size: var(--t-hero);
+  font-weight: 800;
+  letter-spacing: -.035em;
+  line-height: .93;
+  margin: 0;
+  color: var(--text);
+  font-variation-settings: "opsz" 72;
+  text-wrap: balance;
+}
+.greeting .accent { color: var(--sunrise-hot); }
+
+/* The AI line. Set as a sentence someone wrote you — not a
+   subtitle. This is the heartbeat, so it gets real size and
+   its own breathing room. */
+.encouragement {
+  margin: var(--sp-5) 0 0;
+  font-size: var(--t-lede);
+  line-height: 1.42;
+  letter-spacing: -.011em;
+  color: var(--ink-70);
+  max-width: 30ch;
+  text-wrap: pretty;
+}
+[data-mood="night"] .encouragement { color: var(--text-soft); }
+
+.encouragement.is-loading { display: grid; gap: 9px; max-width: 26ch; }
+.encouragement.is-loading span { height: 13px; display: block; }
+.encouragement.is-loading span:nth-child(1) { width: 100%; }
+.encouragement.is-loading span:nth-child(2) { width: 74%; }
+
+/* Quiet provenance marker — only ever shown for handwritten
+   fallback lines, so a degraded state still reads as intentional. */
+.encouragement-note {
+  margin-top: var(--sp-3);
+  font-family: var(--font-num);
+  font-size: var(--t-label);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ── Day-shape strip: the three numbers that matter today ──
+   Unfilled pips are warm, never gray. Nothing on this screen is
+   allowed to look like a scold at 6am.
+   -------------------------------------------------------- */
+.daystrip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-4);
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--hairline);
+}
+.daystrip .cell { min-width: 0; }
+.daystrip .v {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-num);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -.03em;
+  color: var(--text);
+  display: block;
+}
+.daystrip .v .sub {
+  font-size: .58em;
+  color: var(--text-faint);
+  letter-spacing: 0;
+}
+.daystrip .pips {
+  display: flex;
+  gap: 3px;
+  margin-top: 9px;
+}
+.daystrip .pip {
+  height: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: var(--r-pill);
+  background: var(--peach-deep);
+  opacity: .62;
+}
+.daystrip .pip.on {
+  background: var(--go);
+  opacity: 1;
+}
+[data-mood="night"] .daystrip .pip { background: rgba(255,255,255,.16); opacity: 1; }
+
+.daystrip .k {
+  display: block;
+  margin-top: 9px;
+  font-family: var(--font-body);
+  font-size: var(--t-label);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.daystrip .cell.is-live .v { color: var(--go-deep); }
+/* Nothing done yet is a warm "not yet", never a crossed-out zero
+   sitting in ink at six in the morning. */
+.daystrip .cell:not(.is-live) .v { color: var(--text-pending); }
+[data-mood="night"] .daystrip .cell.is-live .v { color: var(--go); }
+
+/* ── Placeholder for the tiers, built next ── */
+.up-next {
+  margin-top: var(--sp-7);
+  padding: var(--sp-5);
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-lift);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.up-next h2 {
+  font-family: var(--font-display);
+  font-size: var(--t-title);
+  font-weight: 700;
+  letter-spacing: -.025em;
+  margin: 0 0 var(--sp-2);
+  font-variation-settings: "opsz" 24;
+}
+.up-next p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: var(--t-small);
+  max-width: 40ch;
+}

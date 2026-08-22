@@ -1,0 +1,10 @@
+{
+  "name": "win-the-day",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A personal daily operating system.",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.120.0"
+  }
+}
